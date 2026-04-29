@@ -973,24 +973,30 @@ function updatePreview() {
 /* ── AUTH ── */
 function checkPassword() {
   const input = document.getElementById('pwInput').value;
-  if (!ADMIN_PASSWORD) {
-    document.getElementById('pwError').textContent = 'password is not configured';
-    document.getElementById('pwError').style.display = 'block';
+  const errorEl = document.getElementById('pwError');
+
+  // Check if the password was actually injected by the snippet
+  if (!ADMIN_PASSWORD || ADMIN_PASSWORD === '') {
+    errorEl.textContent = 'system error: password not injected by host';
+    errorEl.style.display = 'block';
+    console.error("ADMIN_PASSWORD is empty. Check Netlify Snippets and Environment Variables.");
     return;
   }
 
   if (input === ADMIN_PASSWORD) {
     authenticated = true;
     sessionStorage.setItem('angadlog_auth', '1');
-    document.getElementById('pwError').style.display = 'none';
+    errorEl.style.display = 'none';
     document.getElementById('pwInput').value = '';
     closeAuth();
+    
     const target = pendingEditPost;
     pendingEditPost = null;
     openWrite(target);
+    toast("access granted.");
   } else {
-    document.getElementById('pwError').textContent = 'incorrect password';
-    document.getElementById('pwError').style.display = 'block';
+    errorEl.textContent = 'incorrect password';
+    errorEl.style.display = 'block';
     document.getElementById('pwInput').value = '';
   }
 }
@@ -999,8 +1005,8 @@ function closeAuth() {
   document.getElementById('authOverlay').classList.remove('open');
   document.getElementById('pwInput').value = '';
   document.getElementById('pwError').style.display = 'none';
+  pendingEditPost = null; // Clean up any pending edits if user cancels
 }
-
 /* ── ABOUT OVERLAY ── */
 function openAbout() { document.getElementById('aboutOverlay').classList.add('open'); }
 function closeAbout() { document.getElementById('aboutOverlay').classList.remove('open'); }

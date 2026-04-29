@@ -470,7 +470,7 @@
 <script>
   const SUPABASE_URL   = 'https://okldowanguipkwvypshs.supabase.co';
   const SUPABASE_KEY   = 'sb_publishable_WGeBhzubq6QeOrK0e-XWww_aQrm3vLG';
-  const ADMIN_PASSWORD = (window.CONFIG_ADMIN_PASSWORD ?? window.ENV?.ADMIN_PASSWORD ?? '').trim();
+  const ADMIN_PASSWORD = window.CONFIG_ADMIN_PASSWORD || '';
 </script>
 
 <header>

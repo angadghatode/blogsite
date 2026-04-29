@@ -597,11 +597,7 @@ let editingPost = null;
 let activeTag   = null;
 let eyeTimers   = [];
 let draftTimer  = null;
-let pendingEditPost = null; // post to edit after auth
-
-/* ── VIEW COUNT SIMULATION ──
-   rate(t) = V_MAX * e^(-V_K * t) + V_MIN  (views/hour)
-*/
+let pendingEditPost = null; 
 const V_MAX = 5;
 const V_MIN = 0.08;
 const V_K   = 0.05;
@@ -619,8 +615,8 @@ function saveViewStore(s) {
 function postKey(p) {
   return String(p.id || (p.title.slice(0, 20) + p.created_at));
 }
-/* ── UPDATED VIEW COUNT LOGIC ── */
-const VIEW_BLACKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+const VIEW_BLACKOUT_MS = 5 * 60 * 1000; 
 
 function initViewCount(p) {
   const k = postKey(p), store = getViewStore();
@@ -630,7 +626,6 @@ function initViewCount(p) {
   const createdMs = new Date(p.created_at).getTime();
   const ageMs = now - createdMs;
 
-  // If younger than 5 mins, start at 0. Otherwise, calc historical views.
   let initialViews = 0;
   if (ageMs > VIEW_BLACKOUT_MS) {
     const ageH = ageMs / 3600000;
@@ -658,7 +653,6 @@ function computeViews(p) {
   const nowH  = Math.max(0, (now - createdMs) / 3600000);
   
   if (nowH > lastH) {
-    // Only accumulate views if we've passed the blackout
     store[k].v += Math.floor(viewIntegral(lastH, nowH) * (0.8 + Math.random() * 0.4));
     store[k].t  = now;
     saveViewStore(store);

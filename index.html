@@ -595,78 +595,8 @@ let authenticated = false;
 let currentPost = null;
 let editingPost = null;
 let activeTag   = null;
-let eyeTimers   = [];
 let draftTimer  = null;
-let pendingEditPost = null; 
-const V_MAX = 5;
-const V_MIN = 0.08;
-const V_K   = 0.05;
-
-function viewIntegral(t1, t2) {
-  const exp = (-V_MAX / V_K) * (Math.exp(-V_K * t2) - Math.exp(-V_K * t1));
-  return Math.max(0, exp + V_MIN * (t2 - t1));
-}
-function getViewStore() {
-  try { return JSON.parse(localStorage.getItem('angadlog_views') || '{}'); } catch { return {}; }
-}
-function saveViewStore(s) {
-  try { localStorage.setItem('angadlog_views', JSON.stringify(s)); } catch {}
-}
-function postKey(p) {
-  return String(p.id || (p.title.slice(0, 20) + p.created_at));
-}
-
-const VIEW_BLACKOUT_MS = 1 * 60 * 1000; 
-
-function initViewCount(p) {
-  const k = postKey(p), store = getViewStore();
-  if (store[k]) return;
-
-  const now = Date.now();
-  const createdMs = new Date(p.created_at).getTime();
-  const ageMs = now - createdMs;
-
-  let initialViews = 0;
-  if (ageMs > VIEW_BLACKOUT_MS) {
-    const ageH = ageMs / 3600000;
-    initialViews = Math.floor(viewIntegral(0, ageH) * 0.88);
-  }
-
-  store[k] = { v: initialViews, t: now };
-  saveViewStore(store);
-}
-
-function computeViews(p) {
-  const k = postKey(p), store = getViewStore(), now = Date.now();
-  const createdMs = new Date(p.created_at).getTime();
-  
-  if (!store[k]) { 
-    initViewCount(p); 
-    return getViewStore()[k]?.v || 0; 
-  }
-
-  if (now - createdMs < VIEW_BLACKOUT_MS) {
-    return 0;
-  }
-
-  const lastH = Math.max(0, (store[k].t - createdMs) / 3600000);
-  const nowH  = Math.max(0, (now - createdMs) / 3600000);
-  
-  if (nowH > lastH) {
-    store[k].v += Math.floor(viewIntegral(lastH, nowH) * (0.8 + Math.random() * 0.4));
-    store[k].t  = now;
-    saveViewStore(store);
-  }
-  return store[k].v;
-}
-function setStoredViews(k, v) {
-  const store = getViewStore();
-  if (store[k]) { store[k].v = v; saveViewStore(store); }
-}
-function getCardViews(p) {
-  const store = getViewStore();
-  return store[postKey(p)]?.v || 0;
-}
+let pendingEditPost = null;
 
 /* ── SUPABASE ── */
 const useSupabase = !!(SUPABASE_URL && SUPABASE_KEY);
@@ -700,7 +630,6 @@ async function loadPosts() {
   } catch(e) {
     console.error('loadPosts:', e);
   }
-  posts.forEach(initViewCount);
   renderTagFilter();
   renderList();
 }
@@ -753,7 +682,7 @@ function renderList() {
       <div class="post-meta">
         <span class="post-tag">${p.tag}</span>
         <span class="post-date" title="${fmtDate(p.created_at)}">${relativeDate(p.created_at)}</span>
-        <span class="post-views">${eyeSVG} ${getCardViews(p).toLocaleString()}</span>
+        <span class="post-views">${eyeSVG} ${(p.views || 0).toLocaleString()}</span>
         <span class="post-read-time">${calcReadTime(p.body)} min read</span>
       </div>
       <div class="post-title">${p.title}</div>
@@ -793,25 +722,29 @@ function showView(id) {
 }
 
 function showHome() {
-  eyeTimers.forEach(clearInterval); eyeTimers=[];
   currentPost = null;
   showView('home');
   renderList();
 }
 
 /* ── OPEN POST ── */
-function openPost(p) {
+async function openPost(p) {
   if (!p) return;
   currentPost = p;
-  eyeTimers.forEach(clearInterval); eyeTimers=[];
 
-  let views = computeViews(p);
-  const k = postKey(p), createdMs = new Date(p.created_at).getTime();
-  const eyeId = 'eye_' + Date.now();
-
-  // Increment views on visit
-  views++;
-  setStoredViews(k, views);
+  // Increment views once per session
+  if (!sessionStorage.getItem('viewed_' + p.id)) {
+    p.views = (p.views || 0) + 1;
+    if (useSupabase && p.id) {
+      try {
+        await sbFetch(`posts?id=eq.${p.id}`, { method: 'PATCH', body: JSON.stringify({ views: p.views }) });
+      } catch(e) {
+        console.error('Failed to update views:', e);
+        // Optionally revert: p.views--;
+      }
+    }
+    sessionStorage.setItem('viewed_' + p.id, 'true');
+  }
 
   const adminHtml = authenticated ? `
     <div class="admin-actions" id="postAdminActions">
@@ -833,7 +766,7 @@ function openPost(p) {
         <svg class="eye-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>
         </svg>
-        <span id="${eyeId}">${views.toLocaleString()} views</span>
+        <span>${p.views.toLocaleString()} views</span>
       </div>
       ${adminHtml}
     </div>
@@ -841,18 +774,6 @@ function openPost(p) {
   `;
   showView('post');
   window.scrollTo(0,0);
-
-  // Live ticker
-  eyeTimers.push(setInterval(() => {
-    const ageH = (Date.now()-createdMs)/3600000;
-    const rate = V_MAX * Math.exp(-V_K * ageH) + V_MIN;
-    if (Math.random() < rate * 20/3600) {
-      views++;
-      const el = document.getElementById(eyeId);
-      if (el) el.textContent = views.toLocaleString()+' views';
-      setStoredViews(k, views);
-    }
-  }, 5000));
 }
 
 /* ── DELETE ── */
@@ -884,10 +805,6 @@ async function confirmDelete() {
   } else {
     posts = posts.filter(x => x !== p);
   }
-
-  const store = getViewStore();
-  delete store[postKey(p)];
-  saveViewStore(store);
 
   await loadPosts();
   showHome();

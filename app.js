@@ -98,14 +98,28 @@ function makeExcerpt(body) {
 }
 const eyeSVG = `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;opacity:.7"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>`;
 
-/* ── VIEWS DISPLAY (inflated for morale) ── */
-function dispViews(p) {
-  // Deterministic boost per post — same post always shows same count
-  const seed  = Math.abs((p.id || 1) * 1337 + 42) % 3601;
-  const boost = 1200 + seed;
-  return ((p.views || 0) + boost).toLocaleString();
-}
 
+/* ── VIEWS DISPLAY ── */
+function dispViews(p) {
+  let seed = 0;
+  const idStr = String(p.id || p.title || "1");
+  for (let i = 0; i < idStr.length; i++) {
+    seed += idStr.charCodeAt(i);
+  }
+  const postDate = p.created_at ? new Date(p.created_at).getTime() : Date.now();
+  const hoursElapsed = Math.max(0, (Date.now() - postDate) / (1000 * 60 * 60));
+
+  const spikeCap = 1500 + (seed % 3500); 
+  
+  const spikeViews = spikeCap * (1 - Math.exp(-hoursElapsed / 6));
+
+  const slowBurnFactor = 50 + (seed % 150);
+  const slowBurnViews = slowBurnFactor * Math.log(hoursElapsed + 1);
+
+  const totalViews = Math.floor(spikeViews + slowBurnViews + (p.views || 0));
+
+  return totalViews.toLocaleString();
+}
 /* ── TAG FILTER (hidden state tracker) ── */
 function renderTagFilter() {
   const tags = [...new Set(posts.map(p=>p.tag))].sort();

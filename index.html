@@ -9,150 +9,143 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
 
+<body>
 <!-- ── STAR FIELD ────────────────────────────────────────────── -->
 <div id="starfield" aria-hidden="true"></div>
 
-<!-- ── HEADER ───────────────────────────────────────────────── -->
-<header>
-  
+<!-- ── APP WRAPPER (Centers and contains the layout) ─────────── -->
+<div class="app-container">
 
-  <div class="header-inner">
-    <div class="header-top">
-      <div>
-        <div class="title-row">
-          <span class="site-title" onclick="showHome()">angad.log<span class="blink-cursor">_</span></span>
+  <!-- ── HEADER ───────────────────────────────────────────────── -->
+  <header class="app-header">
+      <!-- Place your moon/clouds drawing background here later -->
+      <div class="art-placeholder art-sky"></div> 
+
+      <div class="header-top-row">
+        <div class="title-wrap">
+            <span class="site-title" onclick="showHome()">angad.log<span class="blink-cursor">_</span></span>
         </div>
-        <p class="site-subtitle">A DEVELOPER'S DIARY FROM PERTH</p>
+        <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
       </div>
-      <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
-    </div>
-    <nav class="header-nav" aria-label="Site sections">
-      <button class="tab-btn active" id="tabLog" onclick="showHome()">
-        <svg width="9" height="9" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2"/><rect x="0" y="4" width="9"  height="2"/><rect x="0" y="8" width="11" height="2"/></svg>
-        LOG
-      </button>
-      <button class="write-trigger" onclick="handleWriteClick()" title="New entry (⌘K)">✎</button>
-    </nav>
-  </div>
-</header>
+      
+      <p class="site-subtitle">A DEVELOPER'S DIARY FROM PERTH </p>
+      
+      <nav class="main-tabs">
+        <button class="main-tab active" id="tabLog" onclick="showHome()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2"/><rect x="0" y="4" width="9" height="2"/><rect x="0" y="8" width="11" height="2"/></svg>
+            LOG
+        </button>
+        <button class="main-tab" onclick="openAbout()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="6" cy="4" r="2.5"/><path d="M1 11c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
+            ABOUT
+        </button>
+        <!-- Restored Write Trigger so you can still add posts -->
+        <button class="write-trigger" onclick="handleWriteClick()" title="New entry (⌘K)">✎</button>
+      </nav>
+  </header>
 
 <!-- ── APP BODY ──────────────────────────────────────────────── -->
-<div class="app-body">
-  <div class="sidebar-overlay" onclick="closeSidebar()" aria-hidden="true"></div>
+  <div class="app-body">
 
   <!-- ── SIDEBAR ──────────────────────────────────────────── -->
-  <aside class="sidebar" id="sidebar" aria-label="Site navigation">
+    <aside class="sidebar" id="sidebar">
+      
 
-    <!-- NAVIGATION -->
-    <div class="sidebar-section">
-      <div class="sidebar-label">Navigation</div>
-      <div id="sidebarNav">
-        <button class="sidebar-nav-item active" onclick="setTag(null)">
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2"/><rect x="0" y="4" width="9" height="2"/><rect x="0" y="8" width="11" height="2"/></svg>
-          All Entries
-        </button>
-      </div>
-    </div>
-
-    <!-- RECENT ENTRIES -->
-    <div class="sidebar-section">
-      <div class="sidebar-label">Recent Entries</div>
-      <div id="recentEntries">
-        <div style="color:var(--text-faint);font-size:11px;padding:0.25rem 0.35rem;">loading...</div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">System Status</div>
-      <div class="status-block">
-        <div class="status-item">
-          <span class="status-key">Uptime:</span>
-          <span class="status-val" id="uptime-val">00:00:00</span>
-        </div>
-        <div class="status-item">
-          <span class="status-key">Location:</span>
-          <span class="status-val">Perth, AU</span>
+      <!-- Navigation Box -->
+      <div class="sidebar-box">
+        <div class="sidebar-label">NAVIGATION</div>
+        <div id="sidebarNav">
+          <button class="sidebar-nav-item active" onclick="setTag(null)">
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor"><rect x="0" y="0" width="12" height="2"/><rect x="0" y="4" width="9" height="2"/><rect x="0" y="8" width="11" height="2"/></svg>
+            All Entries
+          </button>
+          <!-- Tags inject here via JS -->
         </div>
       </div>
-    </div>
 
-    <!-- SPOTIFY MODULE (CENTERED) -->
-    <div class="spotify-widget centered">
-      <div class="sidebar-label">Now Playing</div>
-      <div class="spotify-content-vertical">
-        <div class="album-art-large">
-          <img id="album-art" src="https://via.placeholder.com/150" alt="Album Art">
-          <div class="music-bars" id="music-bars">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
+      <!-- Recent Entries Box -->
+      <div class="sidebar-box">
+        <div class="sidebar-label">RECENT ENTRIES</div>
+        <div id="recentEntries">
+          <div style="color:var(--text-faint);font-size:11px;">loading...</div>
+        </div>
+        <!-- Place vine drawing here later -->
+        <div class="art-placeholder art-vine"></div>
+      </div>
+
+      <!-- SPOTIFY MODULE (CENTERED) 
+      <div class="sidebar-box spotify-widget centered">
+        <div class="sidebar-label">NOW PLAYING</div>
+        <div class="spotify-content-vertical">
+          <div class="album-art-large">
+            <img id="album-art" src="https://via.placeholder.com/150" alt="Album Art">
+            <div class="music-bars" id="music-bars">
+              <div class="bar"></div>
+              <div class="bar"></div>
+              <div class="bar"></div>
+            </div>
+          </div>
+          <div class="song-info-centered">
+            <div class="song-title" id="song-title">Searching...</div>
+            <div class="song-artist" id="song-artist">System Idle</div>
           </div>
         </div>
-        <div class="song-info-centered">
-          <div class="song-title" id="song-title">Searching...</div>
-          <div class="song-artist" id="song-artist">System Idle</div>
+      </div>-->
+
+      <!-- Connect Box -->
+      <div class="sidebar-box connect-box">
+        <div class="sidebar-label">CONNECT</div>
+        <div class="connect-row">
+          <a href="https://github.com/angadghatode" class="connect-btn" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></a>
+          <a href="https://linkedin.com/in/angadghatode" class="connect-btn" target="_blank" rel="noopener" title="LinkedIn"><svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+          <a href="mailto:angad.ghatode@gmail.com" class="connect-btn" title="Email"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></a>
         </div>
       </div>
-    </div>
 
-    <!-- CONNECT -->
-    <div class="sidebar-section">
-      <div class="sidebar-label">Connect</div>
-      <div class="connect-row">
-        <a href="https://github.com/angadghatode" class="connect-btn" target="_blank" rel="noopener" title="GitHub">
-          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-        </a>
-        <a href="https://linkedin.com/in/angad-ghatode" class="connect-btn" target="_blank" rel="noopener" title="LinkedIn">
-          <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-        </a>
-        <a href="mailto:angad.ghatode@gmail.com" class="connect-btn" title="Email">
-          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
-        </a>
-      </div>
-      <div style="margin-top:0.75rem;">
-        <button class="sidebar-nav-item" onclick="openAbout()" style="font-size:11px;color:var(--text-faint);">
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0"><circle cx="6" cy="4" r="2.5"/><path d="M1 11c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>
-          about this log
-        </button>
-      </div>
-    </div>
-
-  </aside>
+    </aside>
 
   <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
-  <main class="main-content" id="mainContent">
-    <div class="main-inner">
-
+    <main class="main-content" id="mainContent">
+      
       <!-- HOME VIEW -->
       <div class="view active" id="view-home">
         <!-- tag filter hidden (used by JS internally) -->
         <div id="tagFilter" style="display:none"></div>
-        <div id="postList"><div class="loading">loading entries...</div></div>
+        <div id="postList">
+          <div class="loading">loading entries...</div>
+        </div>
       </div>
 
-      <!-- POST VIEW -->
+      <!-- POST VIEW (Restored from original so clicking a post works) -->
       <div class="view" id="view-post">
         <button class="back-btn" onclick="showHome()">← BACK TO LOG</button>
         <div id="postContent"></div>
       </div>
 
-      <!-- ABOUT VIEW (hidden - used as fallback only) -->
-      <div class="view" id="view-about" style="display:none!important"></div>
+    </main>
+  </div>
 
+<!-- ── FOOTER ────────────────────────────────────────────────── -->
+  <footer class="app-footer">
+    <!-- Place cityscape drawing here later -->
+    <div class="art-placeholder art-cityscape"></div>
+    <div class="footer-bar">
+      <span>© 2024 angad.log</span>
+      <span>BUILT WITH ♥ AND PIXELS</span>
     </div>
-  </main>
-</div><!-- end .app-body -->
+  </footer>
 
-<!-- ── ABOUT OVERLAY ─────────────────────────────────────────── -->
+</div> <!-- End .app-container -->
+
+<!-- ── ABOUT OVERLAY (Restored so the About button works) ───── -->
 <div class="overlay" id="aboutOverlay">
   <div class="overlay-panel">
     <span class="overlay-back" onclick="closeAbout()">← close</span>
     <div class="overlay-header">profile_data</div>
     <div class="about-block">
       <div class="about-label">who</div>
-      <div class="about-value">Angad Ghatode. 21. Software engineering student. Perth, Western Australia — for now.</div>
+      <div class="about-value">Angad Ghatode. Software engineering student. Perth, Western Australia — for now.</div>
     </div>
     <div class="about-block">
       <div class="about-label">what this is</div>
@@ -162,26 +155,12 @@
       <div class="about-label">currently</div>
       <div class="about-value">
         → Finishing a Bachelor of CS (Software Engineering) at Curtin<br>
-        → Working casually at JB Hi-Fi Online Sales<br>
         → Building projects, chasing FAANG<br>
-        → Learning piano (Howl's Moving Castle) + guitar<br>
         → Trying to get out of Perth
       </div>
     </div>
-    <div class="about-block">
-      <div class="about-label">north star</div>
-      <div class="about-value">High-rise apartment. Big city. Work that doesn't feel like work. Creative output I'm proud of. Connections that are real.</div>
-    </div>
   </div>
 </div>
-
-<!-- ── FOOTER (full width, outside app-body) ─────────────────── -->
-<footer>
-      <div class="footer-text">
-        <span>© 2025 angad.log</span>
-        <span>BUILT WITH ♥ AND PIXELS</span>
-      </div>
-    </footer>
 
 <!-- ── WRITE VIEW (fixed, covers everything) ────────────────── -->
 <div id="view-write">
@@ -240,7 +219,6 @@
 <div class="toast" id="toast"></div>
 
 <!-- ── CONFIG ────────────────────────────────────────────────── -->
-
 <!-- ── CONFIG (Netlify injects real values via config.js) ──── -->
 <script src="config.js"></script>
 <script>

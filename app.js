@@ -563,6 +563,12 @@ function toast(msg, isError = false) {
   toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3200);
 }
 
+// Init GitHub Calendar
+GitHubCalendar("#github-calendar", "angadghatode", {
+    responsive: true,
+    global_stats: false // Hides the extra text so it stays clean
+});
+
 
 /* ── KEYBOARD ── */
 document.addEventListener('keydown', e => {

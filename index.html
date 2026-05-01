@@ -29,7 +29,7 @@
         <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
       </div>
       
-      <p class="site-subtitle">A DEVELOPER'S DIARY FROM PERTH </p>
+      <p class="site-subtitle"> </p>
       
       <nav class="main-tabs">
         <button class="main-tab active" id="tabLog" onclick="showHome()">
@@ -74,9 +74,9 @@
         <div class="art-placeholder art-vine"></div>
       </div>
 
-      <!-- SPOTIFY MODULE (CENTERED) 
+      <!-- SPOTIFY MODULE (CENTERED) -->
       <div class="sidebar-box spotify-widget centered">
-        <div class="sidebar-label">NOW PLAYING</div>
+        <div class="sidebar-label">Live Listen</div>
         <div class="spotify-content-vertical">
           <div class="album-art-large">
             <img id="album-art" src="https://via.placeholder.com/150" alt="Album Art">
@@ -91,7 +91,15 @@
             <div class="song-artist" id="song-artist">System Idle</div>
           </div>
         </div>
-      </div>-->
+      </div>
+
+      <!-- GitHub Activity Box -->
+      <div class="sidebar-box github-box">
+        <div class="sidebar-label">COMMIT LOG</div>
+        <div class="github-chart-container" id="github-calendar">
+          <div style="color:var(--text-faint);font-size:11px;padding:0.5rem 0;">loading log...</div>
+        </div>
+      </div>
 
       <!-- Connect Box -->
       <div class="sidebar-box connect-box">
@@ -131,7 +139,7 @@
     <!-- Place cityscape drawing here later -->
     <div class="art-placeholder art-cityscape"></div>
     <div class="footer-bar">
-      <span>© 2024 angad.log</span>
+      <span>© 2026 angad.log</span>
       <span>BUILT WITH ♥ AND PIXELS</span>
     </div>
   </footer>
@@ -156,7 +164,7 @@
       <div class="about-value">
         → Finishing a Bachelor of CS (Software Engineering) at Curtin<br>
         → Building projects, chasing FAANG<br>
-        → Trying to get out of Perth
+        → Geting into Videography
       </div>
     </div>
   </div>
@@ -228,6 +236,7 @@
   const ADMIN_PASSWORD = 'REPLACE_ME_PASSWORD';
 </script>
 
+<script src="https://unpkg.com/github-calendar@latest/dist/github-calendar.min.js"></script>
 <!-- ── APPLICATION ─────────────────────────────────────────── -->
 <script src="app.js"></script>
 </body>

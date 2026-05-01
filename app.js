@@ -614,9 +614,9 @@ async function updateSpotify() {
   }
 }
 
-// Uptime Counter Logic (Time since you started your degree or session)
+// Uptime Counter Logic
 function updateUptime() {
-  const start = new Date("2004-09-30T00:00:00"); // Update this to your desired start date
+  const start = new Date("2004-09-30T00:00:00"); 
   const now = new Date();
   const diff = now - start;
 
@@ -624,8 +624,14 @@ function updateUptime() {
   const mins = Math.floor((diff % 3600000) / 60000);
   const secs = Math.floor((diff % 60000) / 1000);
 
-  document.getElementById('uptime-val').innerText = 
-    `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  // THE FIX: Grab the element first
+  const uptimeEl = document.getElementById('uptime-val');
+  
+  // Only try to change the text IF the element actually exists!
+  if (uptimeEl) {
+    uptimeEl.innerText = 
+      `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
 }
 
 // Initial calls and intervals

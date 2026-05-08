@@ -60,10 +60,12 @@ body {
 /* ── STAR FIELD ─────────────────────────────────────────────── */
 #starfield {
   position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -10; /* Very low */
+  pointer-events: none; /* Crucial: clicks go through the stars */
 }
 .star {
   position: absolute;
@@ -616,7 +618,19 @@ body {
 }
 
 /* ── OVERLAYS (About & Auth) ─────────────────────────────────── */
-.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 400; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 8, 20, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 9999 !important; /* Highest possible */
+  display: none; 
+  justify-content: center;
+  align-items: center;
+}
 .overlay.open { display: flex; }
 .overlay-panel { background: var(--bg-card); border: 2px solid var(--border-mid); border-radius: 8px; padding: 2.5rem; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; }
 .overlay-back { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--text-faint); cursor: pointer; letter-spacing: 1px; margin-bottom: 1.5rem; display: inline-block; transition: color 0.13s; }
@@ -681,6 +695,22 @@ body {
   padding-bottom: 8px;
 }
 
+/* 1. PREVIEW BUTTON STYLING */
+.preview-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--purple-bright);
+  padding: 4px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  text-transform: uppercase;
+  margin: 0 10px;
+}
+.preview-toggle-btn:hover {
+  background: var(--border-dim);
+}
+
 /* 1. HIDE ALL THE UGLY ACCESSIBILITY JUNK */
 .github-chart-container .sr-only,
 .github-chart-container .contrib-footer {
@@ -742,6 +772,118 @@ body {
 .github-chart-container header, 
 .github-chart-container a {
   display: none !important;
+}
+
+.admin-only {
+  display: none !important;
+}
+
+/* When the body has the 'is-admin' class, show them */
+body.is-admin .admin-only {
+  display: flex !important;
+}
+/* If it's a block element like the dash button, use inline-flex or block */
+body.is-admin #tabDash, 
+body.is-admin .write-trigger {
+  display: inline-flex !important;
+}
+
+/* 3. HIDE SIDEBAR IN DASHBOARD MODE */
+body.dashboard-mode .sidebar {
+  display: none !important;
+}
+body.dashboard-mode .main-content {
+  flex: 1;
+  width: 100%;
+}
+
+/* 4. THE SECRET CAT BUTTON */
+.cat-trigger {
+  position: absolute;
+  right: 80px; /* Adjust based on where your cat sits */
+  bottom: 88px;
+  width: 41px;
+  height: 44px;
+  cursor: help; /* A subtle hint that it's interactive */
+  z-index: 100;
+  background: transparent;
+  border: none;
+
+}
+
+/* ── DASHBOARD UI ───────────────────────────────────────────── */
+#view-dashboard {
+  padding: 1.5rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.dash-box {
+  background: rgba(10, 8, 20, 0.4);
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+/* Launcher Buttons */
+.launcher-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+.launch-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--purple-bright);
+  padding: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.launch-btn:hover {
+  background: var(--border-dim);
+  transform: translateX(5px);
+}
+
+/* To-Do Styling */
+.todo-input-wrap input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: white;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  font-family: 'Share Tech Mono', monospace;
+}
+.todo-items { list-style: none; padding: 0; }
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 14px;
+}
+.todo-item input[type="checkbox"] { accent-color: var(--purple); }
+
+/* Stats Row */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+}
+
+@media (max-width: 1000px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
 }
 
 /* ── MOBILE (Fallback for smaller screens) ───────────────────── */

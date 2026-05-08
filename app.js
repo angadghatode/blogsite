@@ -247,10 +247,30 @@ function showView(id) {
 }
 
 function showHome() {
-  currentPost = null;
-  document.getElementById('tabLog').classList.add('active');
-  showView('home');
-  renderList();
+    document.body.classList.remove('dashboard-mode'); // Show sidebar again
+    
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    
+    document.getElementById('view-home').classList.add('active');
+    document.getElementById('tabLog').classList.add('active');
+}
+
+function showDashboard() {
+    // 1. Hide the sidebar & expand content
+    document.body.classList.add('dashboard-mode');
+    
+    // 2. Hide all other views
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    
+    // 3. Show the dashboard
+    document.getElementById('view-dashboard').classList.add('active');
+    document.getElementById('tabDash').classList.add('active');
+    
+    // 4. Run your data fetches
+    fetchTodos();
+    // fetchVault(); <- Add this once we build the vault loader!
 }
 
 /* ── OPEN POST ── */
@@ -386,6 +406,88 @@ function closeWrite() {
   }
 }
 
+// THE SESSION LAUNCHER
+function launchSession(type) {
+  const sessions = {
+    'code': [
+      'https://github.com',
+      'https://chatgpt.com',
+      'https://myparallel.site',
+      'vscode://' // This attempts to open the app locally
+    ],
+    'uni': [
+      'https://lms.curtin.edu.au',
+      'https://outlook.office.com'
+    ],
+    'guitar': [
+      'https://youtube.com/c/yourfavoritesong',
+      'https://ultimate-guitar.com'
+    ]
+  };
+
+  if (sessions[type]) {
+    sessions[type].forEach(url => {
+      window.open(url, '_blank');
+    });
+  }
+}
+
+/* ── DASHBOARD ACTIONS ──────────────────────────────────────── */
+
+// 1. FETCH TODOS
+async function fetchTodos() {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) return console.error(error);
+  
+  const list = document.getElementById('todo-list');
+  list.innerHTML = data.map(t => `
+    <li class="todo-item">
+      <input type="checkbox" ${t.is_done ? 'checked' : ''} onchange="toggleTodo(${t.id}, this.checked)">
+      <span style="${t.is_done ? 'text-decoration:line-through; opacity:0.5' : ''}">${t.task}</span>
+      <button onclick="deleteTodo(${t.id})" style="background:none; border:none; color:var(--border-color); cursor:pointer; margin-left:auto;">×</button>
+    </li>
+  `).join('');
+}
+
+// 2. ADD TODO
+async function addTodo() {
+  const input = document.getElementById('todoInput');
+  const task = input.value.trim();
+  if (!task) return;
+
+  const { error } = await supabase.from('todos').insert([{ task }]);
+  if (!error) {
+    input.value = '';
+    fetchTodos();
+  }
+}
+
+// 3. TOGGLE TODO
+async function toggleTodo(id, is_done) {
+  await supabase.from('todos').update({ is_done }).eq('id', id);
+  fetchTodos();
+}
+
+// 4. DELETE TODO
+async function deleteTodo(id) {
+  await supabase.from('todos').delete().eq('id', id);
+  fetchTodos();
+}
+
+// 5. THE VAULT (QUICK LINKS)
+async function addLink() {
+  const url = prompt("Paste Link URL:");
+  if (!url) return;
+  const category = prompt("Category? (coding, guitar, uni, life)", "coding");
+  
+  await supabase.from('vault').insert([{ url, category }]);
+  // Refresh vault list logic...
+}
+
 /* ── MOBILE PREVIEW TOGGLE ── */
 let mobilePreviewVisible = false;
 function toggleMobilePreview() {
@@ -418,40 +520,85 @@ function updatePreview() {
   `;
 }
 
-/* ── AUTH ── */
+/* ── AUTH & PERSISTENCE (FIXED) ── */
+
+window.addEventListener('DOMContentLoaded', () => {
+    checkPersistence();
+});
+
+function checkPersistence() {
+    // We check the localStorage key we defined earlier
+    const isAuth = localStorage.getItem('angad_auth');
+    
+    if (isAuth === 'true') {
+        authenticated = true; // Updates the global JS state
+        document.body.classList.add('is-admin'); // Triggers the CSS to show buttons
+    }
+}
+
+function openAuth() {
+    console.log("Cat clicked: Opening Auth..."); // Check your console (F12) for this!
+    const overlay = document.getElementById('authOverlay');
+    const input = document.getElementById('pwInput');
+    const errorEl = document.getElementById('pwError');
+
+    if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.add('active');
+    }
+    if (errorEl) errorEl.style.display = 'none';
+    if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 100);
+    }
+}
+
+function closeAuth() {
+    const overlay = document.getElementById('authOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.classList.remove('active');
+    }
+}
+
 function checkPassword() {
   const input   = document.getElementById('pwInput').value;
   const errorEl = document.getElementById('pwError');
 
   if (!ADMIN_PASSWORD || ADMIN_PASSWORD === '') {
-    errorEl.textContent = 'system error: password not injected by host';
+    errorEl.textContent = 'system error: password missing';
     errorEl.style.display = 'block';
-    console.error('ADMIN_PASSWORD is empty. Check Netlify Snippets and Environment Variables.');
     return;
   }
 
   if (input === ADMIN_PASSWORD) {
+    // 1. Update Global Logic State
     authenticated = true;
-    sessionStorage.setItem('angadlog_auth', '1');
+    
+    // 2. Set Persistence (so it stays after refresh)
+    localStorage.setItem('angad_auth', 'true');
+    
+    // 3. Trigger CSS Visibility
+    document.body.classList.add('is-admin');
+    
+    // 4. Cleanup UI
     errorEl.style.display = 'none';
     document.getElementById('pwInput').value = '';
     closeAuth();
-    const target = pendingEditPost;
-    pendingEditPost = null;
-    openWrite(target);
+    
+    // 5. Success Feedback
     toast('access granted.');
+    
+    // Optional: If you were trying to write a post, open that view
+    if (pendingEditPost !== undefined && pendingEditPost !== null) {
+        openWrite(pendingEditPost);
+        pendingEditPost = null;
+    }
   } else {
     errorEl.textContent = 'incorrect password';
     errorEl.style.display = 'block';
     document.getElementById('pwInput').value = '';
   }
-}
-
-function closeAuth() {
-  document.getElementById('authOverlay').classList.remove('open');
-  document.getElementById('pwInput').value = '';
-  document.getElementById('pwError').style.display = 'none';
-  pendingEditPost = null;
 }
 
 /* ── DRAFT ── */

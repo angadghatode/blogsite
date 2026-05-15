@@ -1,0 +1,340 @@
+/* ================================================================
+   ANGAD.LOG — dashboard.css (V3 High-Fidelity Match)
+   ================================================================ */
+
+/* Hide standard blog elements when in dashboard mode */
+body.is-admin .admin-only { display: flex !important; }
+body.is-admin #tabDash, body.is-admin .write-trigger { display: inline-flex !important; }
+body.dashboard-mode .sidebar { display: none !important; }
+
+/* THE FIX: Establish a strict Flexbox height chain */
+body.dashboard-mode .main-content { 
+  flex: 1; 
+  width: 100%; 
+  padding-right: 0; 
+  overflow: hidden; 
+  display: flex; 
+  flex-direction: column; 
+}
+
+#view-dashboard.active {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-layout {
+  display: flex; 
+  gap: 24px;
+  flex: 1; 
+  min-height: 0; 
+}
+
+/* ── DASHBOARD SIDEBAR ── */
+.dash-sidebar {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  padding-right: 10px;
+  flex-shrink: 0;
+  overflow-y: auto; /* Lets the sidebar scroll independently if needed */
+}
+
+.dash-nav { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+}
+
+.dash-nav-item {
+  background: transparent; 
+  border: none; 
+  color: var(--text-dim); 
+  text-align: left;
+  padding: 10px 14px; 
+  font-family: 'Share Tech Mono', monospace; 
+  font-size: 15px;
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  transition: all 0.2s;
+  border-left: 3px solid transparent; 
+  border-radius: 0 6px 6px 0;
+}
+
+.dash-nav-item svg { 
+  width: 18px; 
+  height: 18px; 
+  color: var(--text-faint); 
+  transition: color 0.2s;
+}
+
+.dash-nav-item:hover { 
+  background: rgba(255,255,255,0.03); 
+  color: var(--text); 
+}
+
+.dash-nav-item.active { 
+  background: linear-gradient(90deg, rgba(124, 108, 212, 0.15) 0%, transparent 100%); 
+  color: var(--text);
+  border-left: 3px solid var(--purple-bright); 
+}
+
+.dash-nav-item.active svg { 
+  color: var(--purple-bright); 
+}
+
+/* ── MAIN GRID ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 380px; 
+  /* Row 1 is for the command bar (auto size), Rows 2 & 3 fill the rest */
+  grid-template-rows: max-content 1fr 1fr; 
+  gap: 1.5rem;
+  flex: 1;
+  height: 100%;
+  overflow-y: auto; 
+  padding-right: 15px;
+  padding-bottom: 3rem;
+}
+
+/* Explicit Grid Placement */
+.dash-command { grid-column: 1 / -1; grid-row: 1; }
+.dash-tasks { grid-column: 1; grid-row: 2; }
+.dash-links { grid-column: 2; grid-row: 2; }
+.dash-calendar { grid-column: 3; grid-row: 2 / span 2; }
+.dash-notes { grid-column: 1; grid-row: 3; }
+.dash-secure-vault { grid-column: 2; grid-row: 3; }
+
+/* ── COMMAND BAR ── */
+.dash-command {
+  grid-column: 1 / -1; 
+  grid-row: 1;
+  background: var(--bg-card);
+  border: 2px solid var(--border-mid);
+  border-radius: 8px;
+  padding: 0 24px; /* Horizontal padding only */
+  display: flex;
+  flex-direction: row !important; /* THE FIX: Forces it to stay a horizontal line */
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  height: 75px; /* THE FIX: Stops the box from getting massive */
+}
+.command-prefix { 
+  color: var(--purple-bright); 
+  font-family: 'Share Tech Mono', monospace; 
+  font-weight: bold; 
+  font-size: 26px; /* Huge arrow */
+}
+
+#commandInput { 
+  flex: 1; /* THE FIX: Forces the input to stretch all the way across */
+  width: 100%;
+  background: transparent; 
+  border: none; 
+  color: var(--text); 
+  font-family: 'Share Tech Mono', monospace; 
+  font-size: 22px; /* Huge readable text */
+  outline: none; 
+  text-align: left;
+}
+
+#commandInput::placeholder { 
+  color: var(--text-faint); 
+}
+
+/* ── CARDS (Matched to Blog Cards) ── */
+.dash-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-mid);
+  border-radius: 8px; 
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.card-title { display: flex; align-items: center; gap: 12px; font-family: 'Share Tech Mono', monospace; font-size: 18px; font-weight: bold; color: var(--text); letter-spacing: 1px;}
+.card-title svg { width: 22px; height: 22px; color: var(--purple-bright); }
+
+.card-btn { background: var(--bg); border: 1px solid var(--border-mid); color: var(--purple-bright); font-family: 'Share Tech Mono', monospace; font-size: 14px; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+.card-btn:hover { background: var(--purple-faint); border-color: var(--purple-bright); }
+
+.card-footer { margin-top: auto; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; }
+.footer-stats { font-size: 14px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
+.card-footer-link { background: none; border: none; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; font-size: 14px; cursor: pointer; transition: color 0.2s; text-decoration: none;}
+.card-footer-link:hover { color: var(--purple-bright); }
+
+/* Utilities */
+.right { margin-left: auto; }
+.star-icon { width: 18px; height: 18px; color: var(--text-dim); cursor: pointer; transition: 0.2s; }
+.star-icon:hover, .star-icon.highlight { color: var(--cream); fill: var(--cream); }
+.list-container { display: flex; flex-direction: column; flex: 1; gap: 0;}
+
+/* ── TASKS ── */
+.task-filter-tabs { display: flex; gap: 24px; margin-bottom: 15px; border-bottom: 2px solid var(--border-mid); padding-bottom: 8px; }
+.task-filter-tab { background: none; border: none; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; font-size: 16px; cursor: pointer; padding-bottom: 8px; border-bottom: 3px solid transparent; margin-bottom: -11px; transition: color 0.2s;}
+.task-filter-tab:hover { color: var(--text); }
+.task-filter-tab.active { color: var(--cream); border-bottom-color: var(--purple-bright); }
+
+.todo-items { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; }
+.list-item { 
+  display: flex; align-items: center; gap: 16px; padding: 14px 16px; 
+  background: var(--bg); /* Deep matching background */
+  border: 1px solid var(--border-mid); /* Clear borders */
+  border-radius: 8px;
+  font-family: 'Share Tech Mono', monospace; font-size: 16px; 
+  transition: all 0.2s;
+}
+.list-item:hover { border-color: var(--purple-bright); background: var(--bg-hover); }
+
+/* Transparent Tick Box */
+.custom-checkbox {
+  appearance: none; -webkit-appearance: none;
+  width: 20px; height: 20px; flex-shrink: 0;
+  border: 2px solid var(--border-mid); border-radius: 4px;
+  background: transparent; cursor: pointer; position: relative;
+  transition: all 0.2s;
+}
+.custom-checkbox:checked { background: var(--purple-dim); border-color: var(--purple-bright); }
+.custom-checkbox:checked::after {
+  content: '✔'; position: absolute; color: var(--cream);
+  font-size: 14px; left: 3px; top: -1px;
+}
+
+.item-title { color: var(--text); }
+.item-meta { display: flex; align-items: center; gap: 12px; color: var(--text-dim); font-size: 14px; }
+.tag-chip { font-family: 'Share Tech Mono', monospace; font-size: 12px; padding: 4px 10px; border-radius: 4px; background: var(--purple-faint); color: var(--purple-bright); border: 1px solid var(--purple-dim); text-transform: capitalize;}
+.date-chip { font-family: 'Share Tech Mono', monospace; font-size: 12px; padding: 4px 10px; border-radius: 4px; background: rgba(77, 212, 160, 0.1); color: var(--green); border: 1px solid rgba(77, 212, 160, 0.2); text-transform: capitalize;}
+
+/* ── SAVED LINKS ── */
+#vault-list { gap: 12px; }
+.link-item { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border-mid); border-radius: 8px; text-decoration: none; transition: all 0.2s; font-family: 'Share Tech Mono', monospace; }
+.link-item:hover { border-color: var(--purple-bright); background: var(--bg-hover); }
+.link-icon { width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; }
+.link-text { display: flex; flex-direction: column; gap: 4px; }
+.link-title { color: var(--text); font-size: 16px; font-weight: bold; }
+.link-url { color: var(--text-dim); font-size: 13px; }
+
+/* ── NOTES ── */
+#notes-list { gap: 12px; }
+.note-item {
+  display: flex; align-items: flex-start; gap: 15px; padding: 16px; 
+  background: var(--bg); border: 1px solid var(--border-mid); border-radius: 8px;
+  font-family: 'Share Tech Mono', monospace; cursor: pointer; transition: all 0.2s;
+}
+.note-item:hover { border-color: var(--purple-bright); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); background: var(--bg-hover); }
+.note-icon { width: 22px; height: 22px; color: var(--purple-bright); flex-shrink: 0; margin-top: 2px;}
+.note-text-block { display: flex; flex-direction: column; gap: 6px;}
+.note-title { color: var(--text); font-size: 16px; font-weight: bold; }
+.note-excerpt { color: var(--text-dim); font-size: 14px; }
+
+/* ── VAULT ── */
+.secure-entry { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; border: 2px dashed var(--border-mid); border-radius: 8px; padding: 24px; text-align: center; margin-bottom: 10px; background: var(--bg);}
+.vault-folder-icon svg { width: 48px; height: 48px; color: var(--purple-dim); margin-bottom: 12px;}
+.secure-entry p { font-family: 'Share Tech Mono', monospace; font-size: 15px; color: var(--text-dim); margin-bottom: 1.5rem; line-height: 1.6;}
+.vault-enter-btn { font-family: 'Share Tech Mono', monospace; font-size: 14px; padding: 10px 28px; background: var(--purple-faint); color: var(--purple-bright); border: 1px solid var(--purple-dim); border-radius: 4px; cursor: pointer; transition: 0.2s;}
+.vault-enter-btn:hover { background: var(--purple); color: white; }
+
+/* ── CALENDAR ── */
+/* ── CALENDAR ── */
+.cal-widget { 
+  font-family: 'Share Tech Mono', monospace; 
+  display: flex; 
+  flex-direction: column; 
+  flex: 1;
+}
+
+.cal-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  color: var(--text); 
+  font-size: 16px; 
+  margin-bottom: 1.5rem; 
+  padding: 0 10px;
+}
+
+.cal-grid { 
+  display: grid; 
+  grid-template-columns: repeat(7, 1fr); 
+  grid-auto-rows: max-content; /* THE FIX: Stops the rows from stretching vertically! */
+  gap: 12px 8px; /* Tighter vertical and horizontal spacing */
+  text-align: center; 
+  margin-bottom: auto; /* Pushes empty space to the bottom, keeping the grid tight */
+}
+
+.cal-day-head { 
+  font-size: 11px; 
+  color: var(--text-dim); 
+  margin-bottom: 8px;
+}
+
+.cal-day { 
+  font-size: 14px; 
+  color: var(--text); 
+  width: 32px; 
+  height: 32px; /* Fixed square size */
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 0 auto; /* Centers the square in the grid column */
+  border-radius: 6px; 
+  position: relative; 
+  cursor: pointer;
+}
+
+.cal-day.fade { color: var(--text-faint); opacity: 0.5;}
+.cal-day.active { background: var(--purple-dim); color: var(--cream); font-weight: bold;}
+
+.cal-dot { 
+  width: 4px; 
+  height: 4px; 
+  background: var(--cream); 
+  border-radius: 50%; 
+  position: absolute; 
+  bottom: 4px; /* Docks the dot perfectly inside the bottom of the square */
+  left: 50%; 
+  transform: translateX(-50%);
+}
+
+.cal-events { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 16px; 
+  border-top: 1px solid var(--border-mid); 
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+.cal-event { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text);}
+.event-dot { width: 8px; height: 8px; background: var(--purple-bright); border-radius: 50%; flex-shrink: 0; }
+.event-date { color: var(--text-dim); font-size: 12px;}
+
+/* ── RESPONSIVE DASHBOARD ── */
+@media (max-width: 1400px) {
+  .dash-grid { grid-template-columns: 1fr 1fr; }
+  .dash-calendar { grid-row: auto; grid-column: span 2; }
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout { flex-direction: column; height: auto; }
+  .dash-sidebar { 
+    width: 100%; 
+    border-right: none; 
+    border-bottom: 1px solid var(--border-mid); 
+    padding-bottom: 1rem; 
+    flex-direction: row; 
+    overflow-x: auto; 
+    position: relative; 
+    top: 0;
+  }
+  .dash-nav { flex-direction: row; gap: 1rem;}
+  .dash-nav-item { border-left: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 0.5rem;}
+  .dash-nav-item.active { background: transparent; border-left: none; border-bottom: 3px solid var(--purple-bright); }
+  .dash-grid { grid-template-columns: 1fr; padding-right: 0;}
+  .dash-tasks, .dash-links, .dash-calendar, .dash-notes, .dash-secure-vault { grid-column: span 1; }
+}

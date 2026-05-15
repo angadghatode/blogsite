@@ -1,0 +1,91 @@
+/* ================================================================
+   ANGAD.LOG — base.css
+   Variables, Resets, Typography, and Global Utilities
+   ================================================================ */
+
+:root {
+  --bg:            #0e0b1f;
+  --bg-card:       rgba(10, 8, 20, 0.95); 
+  --bg-hover:      #211e36;
+  --bg-sidebar:    #181628;
+  --purple:        #7c6cd4;
+  --purple-bright: #9b8de8;
+  --purple-dim:    rgba(124,108,212,0.45);
+  --purple-faint:  rgba(124,108,212,0.09);
+  --cream:         #f0d878;
+  --cream-dim:     rgba(240,216,120,0.55);
+  --text:          #c0b8e0;
+  --text-dim:      #8a82b0;
+  --text-faint:    #564e78;
+  --border:        rgba(124,108,212,0.14);
+  --border-mid:    rgba(124,108,212,0.28);
+  --border-bright: rgba(124,108,212,0.5);
+  --green:         #4dd4a0;
+
+  /* tag palette */
+  --tc-life:        #e87d7d;
+  --tc-project:     #7db3e8;
+  --tc-work:        #e8c67d;
+  --tc-reflection:  #b07de8;
+  --tc-win:         #7de8a8;
+  --tc-setback:     #e8907d;
+  --tc-idea:        #7dd4e8;
+  font-size: 20px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; 
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  line-height: 1.7;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Pixel Scrollbars */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--purple-dim); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--purple); }
+
+/* Utilities */
+.view { display: none; }
+.view.active { display: block; }
+.admin-only { display: none !important; }
+body.is-admin .admin-only { display: flex !important; }
+body.is-admin #tabDash, body.is-admin .write-trigger { display: inline-flex !important; }
+
+/* ── STAR FIELD ── */
+#starfield {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -100; /* Very low */
+  pointer-events: none; /* Crucial: clicks go through the stars */
+}
+
+.star {
+  position: absolute;
+  background: #ffd68e;
+  border-radius: 0;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: var(--op); }
+  50%       { opacity: calc(var(--op) * 0.25); }
+}
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg-card); border: 1px solid var(--purple-dim); border-radius: 4px; color: var(--text); font-family: 'Press Start 2P', monospace; font-size: 7px; padding: 0.8rem 1.2rem; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: var(--tc-life); color: var(--tc-life); }

@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Angad Ghatode | The Build Log</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="icon" id="dynamic-favicon" type="image/png" href="pencil.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Angad Ghatode | The Build Log</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/blog.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  
+  <link rel="icon" id="dynamic-favicon" type="image/png" href="pencil.png">
 </head>
 
 <body>
@@ -27,14 +32,12 @@
         <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">☰</button>
       </div>
       
-      <p class="site-subtitle"> </p>
+      <p class="site-subtitle"></p>
       
       <nav class="main-tabs">
         <button class="main-tab active" id="tabLog" onclick="showHome()">LOG</button>
         <button class="main-tab" onclick="openAbout()">ABOUT</button>
-        
         <button class="main-tab admin-only" id="tabDash" onclick="showDashboard()">DASHBOARD</button>
-        
         <button class="write-trigger admin-only" onclick="handleWriteClick()" title="New entry (⌘K)">✎</button>
       </nav>
   </header>
@@ -105,46 +108,127 @@
       </div>
 
       <div class="view" id="view-dashboard">
-        <div class="dashboard-grid">
-           <!-- Command Bar -->
-        <div class="dash-widget span-full">
-          <input type="text" id="commandInput" placeholder="> /todo, /note, or /link[content]">
-        </div>
+        <div class="dashboard-layout">
 
-        <!-- Widgets -->
-        <div class="dash-widget">
-          <h3>TASKS</h3>
-          <ul id="todo-list" class="todo-items"></ul>
-        </div>
+          <aside class="dash-sidebar">
+            <nav class="dash-nav">
+              <button onclick="switchDashTab('overview')" class="dash-nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>Dashboard</span>
+              </button>
+              <button onclick="switchDashTab('tasks')" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span>Tasks</span>
+              </button>
+              <button onclick="switchDashTab('links')" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                <span>Links</span>
+              </button>
+              <button onclick="switchDashTab('notes')" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Notes</span>
+              </button>
+              <button onclick="switchDashTab('vault')" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>Vault</span>
+              </button>
+              <button onclick="switchDashTab('archive')" class="dash-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+                <span>Archive</span>
+              </button>
+              <button onclick="switchDashTab('settings')" class="dash-nav-item" style="margin-top: 1rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>Settings</span>
+              </button>
+            </nav>
+          </aside>
 
-        <div class="dash-widget">
-          <h3>NOTES</h3>
-          <div id="notes-list"></div>
-        </div>
+          <div class="dash-grid">
+            
+            <section class="dash-card dash-command span-full">
+              <div class="command-prefix">&gt;</div>
+              <input type="text" id="commandInput" placeholder="/todo Fix the nav #coding @tmrw, /note, /link...">
+            </section>
 
-        <div class="dash-widget">
-          <h3>VAULT</h3>
-          <div id="vault-list" class="vault-grid"></div>
-        </div>
+            <section class="dash-card dash-tasks">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                  TASKS
+                </div>
+              </div>
+              <div class="task-filter-tabs">
+                <button class="task-filter-tab active" onclick="setTaskFilter('all', this)">All</button>
+                <button class="task-filter-tab" onclick="setTaskFilter('today', this)">Today</button>
+                <button class="task-filter-tab" onclick="setTaskFilter('upcoming', this)">Upcoming</button>
+                <button class="task-filter-tab" onclick="setTaskFilter('done', this)">Completed</button>
+              </div>
+              
+              <ul class="todo-items" id="todo-list"></ul>
+              
+              <div class="card-footer">
+                <span class="footer-stats" id="todo-count"></span>
+                <button class="card-footer-link">View all tasks →</button>
+              </div>
+            </section>
 
+            <section class="dash-card dash-links">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                  SAVED LINKS
+                </div>
+              </div>
+              <div class="list-container" id="vault-list"></div>
+            </section>
+
+            <section class="dash-card dash-calendar">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  UPCOMING
+                </div>
+              </div>
+              <div class="cal-widget" id="mini-calendar"></div>
+            </section>
+
+            <section class="dash-card dash-notes">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                  NOTES
+                </div>
+              </div>
+              <div class="list-container" id="notes-list"></div>
+            </section>
+
+            <section class="dash-card dash-secure-vault">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  VAULT
+                </div>
+              </div>
+              <div class="secure-entry">
+                <button class="pw-btn vault-enter-btn" onclick="openAuth()">Enter Vault</button>
+              </div>
+            </section>
+
+          </div>
+        </div>
       </div>
-    </div>
-
     </main>
   </div>
-
   <footer class="app-footer">
     <div class="art-placeholder art-cityscape"></div>
-    <button class="cat-trigger" onclick="openAuth()" title="system_access"></button>
-    <div class="footer-bar">
-      <span>© 2026 angad.log</span>
-      <span>BUILT WITH ♥ AND PIXELS</span>
-    </div>
+      <button class="cat-trigger" onclick="openAuth()" title="system_access"></button>
+        <div class="footer-bar">
+          <span>© 2026 angad.log</span>
+          <span>BUILT WITH ♥ AND PIXELS</span>
+      </div>
   </footer>
 
-</div>
-
-<div class="overlay" id="aboutOverlay">
+</div> <div class="overlay" id="aboutOverlay">
   <div class="overlay-panel">
     <span class="overlay-back" onclick="closeAbout()">← close</span>
     <div class="overlay-header">profile_data</div>
@@ -152,19 +236,22 @@
       <div class="about-label">who</div>
       <div class="about-value">Angad Ghatode. Software engineering student. Perth, Western Australia.</div>
     </div>
-    </div>
+  </div>
 </div>
 
 <div id="view-write">
   <div class="write-header">
     <span class="write-back" onclick="closeWrite()">← back to log</span>
-    <span class="write-mode-label">new entry</span>
-    <button class="preview-toggle-btn" onclick="toggleMobilePreview()">preview</button>
+    
+    <span id="writeModeLabel" class="write-mode-label">new entry</span>
+    
+    <button id="previewToggleBtn" class="preview-toggle-btn" onclick="toggleMobilePreview()">preview</button>
+    
     <select class="write-tag" id="newTag">
       <option value="life">life</option><option value="project">project</option>
     </select>
     <button class="write-submit" id="submitBtn" onclick="submitPost()">// post entry</button>
-  </div>
+</div>
   <div class="write-title-wrap">
     <input class="write-title-input" id="newTitle" type="text" placeholder="entry title...">
   </div>
@@ -192,21 +279,33 @@
   </div>
 </div>
 
+<div class="overlay" id="noteReaderOverlay">
+  <div class="overlay-panel" style="max-width: 800px; width: 95%;">
+    <span class="overlay-back" onclick="closeFullNote()">← close note</span>
+    <div class="overlay-header" id="fullNoteTitle" style="font-size: 2rem;">Note Title</div>
+    <div class="post-meta" style="margin-bottom: 1.5rem;">
+        <span class="post-date" id="fullNoteDate">Date</span>
+    </div>
+    <div class="post-body" id="fullNoteContent" style="white-space: pre-wrap; font-size: 16px;">
+        Loading content...
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
   const SUPABASE_URL   = 'https://okldowanguipkwvypshs.supabase.co';
   const SUPABASE_KEY   = 'sb_publishable_WGeBhzubq6QeOrK0e-XWww_aQrm3vLG';
-  // Use 'REPLACE_ME_PASSWORD' if testing on Netlify, or your real PW if testing locally
   const ADMIN_PASSWORD = 'REPLACE_ME_PASSWORD'; 
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
-
 <script src="https://unpkg.com/github-calendar@latest/dist/github-calendar.min.js"></script>
-<script src="app.js"></script>
+
+<script src="javascript/auth.js"></script>
+<script src="javascript/blog.js"></script>
+<script src="javascript/dashboard.js"></script>
 </body>
 </html>

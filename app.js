@@ -257,20 +257,17 @@ function showHome() {
 }
 
 function showDashboard() {
-    // 1. Hide the sidebar & expand content
     document.body.classList.add('dashboard-mode');
-    
-    // 2. Hide all other views
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
     
-    // 3. Show the dashboard
     document.getElementById('view-dashboard').classList.add('active');
     document.getElementById('tabDash').classList.add('active');
     
-    // 4. Run your data fetches
+    // FETCH DATA
     fetchTodos();
-    // fetchVault(); <- Add this once we build the vault loader!
+    renderVault(); // Make sure this is here!
+    fetchNotes();
 }
 
 /* ── OPEN POST ── */
@@ -436,21 +433,60 @@ function launchSession(type) {
 
 // 1. FETCH TODOS
 async function fetchTodos() {
-  const { data, error } = await supabase
-    .from('todos')
-    .select('*')
-    .order('created_at', { ascending: false });
-
+  if (!sb) return;
+  const { data, error } = await sb.from('todos').select('*').order('created_at', { ascending: false });
   if (error) return console.error(error);
   
   const list = document.getElementById('todo-list');
-  list.innerHTML = data.map(t => `
-    <li class="todo-item">
-      <input type="checkbox" ${t.is_done ? 'checked' : ''} onchange="toggleTodo(${t.id}, this.checked)">
-      <span style="${t.is_done ? 'text-decoration:line-through; opacity:0.5' : ''}">${t.task}</span>
-      <button onclick="deleteTodo(${t.id})" style="background:none; border:none; color:var(--border-color); cursor:pointer; margin-left:auto;">×</button>
-    </li>
-  `).join('');
+  if (list) {
+    list.innerHTML = data.map(t => `
+      <li class="todo-item">
+        <input type="checkbox" ${t.is_done ? 'checked' : ''} onchange="toggleTodo(${t.id}, this.checked)">
+        <span style="${t.is_done ? 'text-decoration:line-through; opacity:0.5' : ''}">${t.task}</span>
+        <button onclick="deleteTodo(${t.id})" class="dash-delete-btn">×</button>
+      </li>
+    `).join('');
+  }
+}
+
+async function fetchNotes() {
+  if (!sb) return;
+  const { data, error } = await sb.from('notes').select('*').order('created_at', { ascending: false });
+  if (error) return console.error(error);
+  
+  const list = document.getElementById('notes-list');
+  if (list) {
+    list.innerHTML = data.map(n => `
+      <div class="note-item">
+        <div class="note-timestamp">${relativeDate(n.created_at)}</div>
+        <div class="note-text">${n.content}</div>
+        <button onclick="deleteNote(${n.id})" class="note-delete-btn">[ DELETE ]</button>
+      </div>
+    `).join('');
+  }
+}
+
+async function renderVault() {
+  if (!sb) return;
+  const vaultEl = document.getElementById('vault-list');
+  if (!vaultEl) return;
+  
+  const { data, error } = await sb.from('vault').select('*').order('created_at', { ascending: false });
+  if (error) return;
+  
+  vaultEl.innerHTML = await Promise.all(data.map(async (item) => {
+    try {
+      const meta = await fetch(`https://api.microlink.io?url=${encodeURIComponent(item.url)}`).then(r => r.json());
+      return `
+        <a href="${item.url}" target="_blank" class="vault-card">
+          <img src="${meta.data.logo?.url || 'https://via.placeholder.com/30'}" class="vault-icon">
+          <div class="vault-title">${meta.data.title || 'Link'}</div>
+        </a>
+      `;
+    } catch {
+      return `<a href="${item.url}" target="_blank" class="vault-card"><div class="vault-title">Link</div></a>`;
+    }
+  })).then(res => res.join(''));
 }
 
 // 2. ADD TODO
@@ -459,7 +495,7 @@ async function addTodo() {
   const task = input.value.trim();
   if (!task) return;
 
-  const { error } = await supabase.from('todos').insert([{ task }]);
+  const { error } = await sb.from('todos').insert([{ task }]);
   if (!error) {
     input.value = '';
     fetchTodos();
@@ -468,13 +504,13 @@ async function addTodo() {
 
 // 3. TOGGLE TODO
 async function toggleTodo(id, is_done) {
-  await supabase.from('todos').update({ is_done }).eq('id', id);
+  await sb.from('todos').update({ is_done }).eq('id', id);
   fetchTodos();
 }
 
 // 4. DELETE TODO
 async function deleteTodo(id) {
-  await supabase.from('todos').delete().eq('id', id);
+  await sb.from('todos').delete().eq('id', id);
   fetchTodos();
 }
 
@@ -484,7 +520,7 @@ async function addLink() {
   if (!url) return;
   const category = prompt("Category? (coding, guitar, uni, life)", "coding");
   
-  await supabase.from('vault').insert([{ url, category }]);
+  await sb.from('vault').insert([{ url, category }]);
   // Refresh vault list logic...
 }
 
@@ -781,8 +817,88 @@ function updateUptime() {
   }
 }
 
-// Initial calls and intervals
+/* --- app.js --- */
+document.getElementById('commandInput').addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (!val || !authenticated) {
+      if (!authenticated) toast('Access denied. Unlock terminal.', true);
+      return;
+    }
+
+    try {
+      if (val.startsWith('/todo ')) {
+        const task = val.replace('/todo ', '');
+        const { error } = await sb.from('todos').insert([{ task, is_done: false }]);
+        if (error) throw error;
+        fetchTodos();
+        toast('Task added.');
+      } 
+      else if (val.startsWith('/link ')) {
+        const url = val.replace('/link ', '');
+        // Your table has 'is_media', so we add it here as false by default
+        const { error } = await sb.from('vault').insert([{ 
+            url: url, 
+            category: 'general',
+            is_media: false 
+        }]);
+        if (error) throw error;
+        renderVault();
+        toast('Link saved to vault.');
+      }
+      else if (val.startsWith('/note ')) {
+        const content = val.replace('/note ', '');
+        
+        // FIX: Your table REQUIRES a 'category'. 
+        // We will default it to 'text' as seen in your screenshot.
+        const { data, error } = await sb.from('notes').insert([{ 
+            content: content,
+            category: 'text' 
+        }]);
+        
+        if (error) {
+            console.error("Supabase Error:", error);
+            toast(`DB Error: ${error.message}`, true);
+        } else {
+            fetchNotes();
+            toast('Note logged.');
+        }
+      }
+      
+      e.target.value = ''; 
+    } catch (err) {
+      console.error(err);
+      toast('Error: ' + err.message, true);
+    }
+  }
+});
+
+// 5. DATABASE MUTATIONS
+async function toggleTodo(id, is_done) {
+  await sb.from('todos').update({ is_done }).eq('id', id);
+  fetchTodos();
+}
+
+async function deleteTodo(id) {
+  await sb.from('todos').delete().eq('id', id);
+  fetchTodos();
+}
+
+async function deleteNote(id) {
+  await sb.from('notes').delete().eq('id', id);
+  fetchNotes();
+}
+
+
+// Initial calls
 setInterval(updateSpotify, 30000);
 setInterval(updateUptime, 1000);
 updateSpotify();
 updateUptime();
+
+// Load data immediately if the elements exist on the page
+window.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('todo-list')) fetchTodos();
+    if (document.getElementById('notes-list')) fetchNotes();
+    if (document.getElementById('vault-list')) renderVault();
+});

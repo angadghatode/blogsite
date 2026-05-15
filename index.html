@@ -106,40 +106,29 @@
 
       <div class="view" id="view-dashboard">
         <div class="dashboard-grid">
-          <section class="dash-box">
-            <div class="sidebar-label">SESSION LAUNCHER</div>
-            <div class="launcher-grid">
-              <button class="launch-btn" onclick="launchSession('code')"><span>🚀</span> START CODING</button>
-              <button class="launch-btn" onclick="launchSession('uni')"><span>🎓</span> UNI MODE</button>
-              <button class="launch-btn" onclick="launchSession('guitar')"><span>🎸</span> PRACTICE</button>
-            </div>
-            <hr style="border-color: var(--border-dim); margin: 1rem 0;">
-            <div class="sidebar-label">THE VAULT (LINKS)</div>
-            <div id="vault-list" class="mini-scroll"></div>
-          </section>
-
-          <section class="dash-box main-focus">
-            <div class="sidebar-label">ACTIVE CODING QUESTS</div>
-            <div class="todo-input-wrap">
-              <input type="text" id="todoInput" placeholder="New task..." onkeydown="if(event.key==='Enter')addTodo()">
-            </div>
-            <ul id="todo-list" class="todo-items"></ul>
-          </section>
-
-          <section class="dash-box">
-            <div class="sidebar-label">PORTFOLIO REMOTE</div>
-            <div class="portfolio-controls">
-               <p style="font-size: 11px; color: var(--text-faint);">Active Repo: angad-portfolio</p>
-               <button class="pw-btn" style="width:100%" onclick="updatePortfolio()">PUSH BIO UPDATE</button>
-            </div>
-            <div class="sidebar-label" style="margin-top:2rem">MEAT SPACE STATS</div>
-            <div id="meat-stats">
-              <div class="stat-row"><span>CALORIES</span> <span id="cal-count">--</span></div>
-              <div class="stat-row"><span>GYM STREAK</span> <span>4 Days</span></div>
-            </div>
-          </section>
+           <!-- Command Bar -->
+        <div class="dash-widget span-full">
+          <input type="text" id="commandInput" placeholder="> /todo, /note, or /link[content]">
         </div>
+
+        <!-- Widgets -->
+        <div class="dash-widget">
+          <h3>TASKS</h3>
+          <ul id="todo-list" class="todo-items"></ul>
+        </div>
+
+        <div class="dash-widget">
+          <h3>NOTES</h3>
+          <div id="notes-list"></div>
+        </div>
+
+        <div class="dash-widget">
+          <h3>VAULT</h3>
+          <div id="vault-list" class="vault-grid"></div>
+        </div>
+
       </div>
+    </div>
 
     </main>
   </div>
@@ -205,11 +194,16 @@
 
 <div class="toast" id="toast"></div>
 
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
   const SUPABASE_URL   = 'https://okldowanguipkwvypshs.supabase.co';
   const SUPABASE_KEY   = 'sb_publishable_WGeBhzubq6QeOrK0e-XWww_aQrm3vLG';
   // Use 'REPLACE_ME_PASSWORD' if testing on Netlify, or your real PW if testing locally
   const ADMIN_PASSWORD = 'REPLACE_ME_PASSWORD'; 
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
 
 <script src="https://unpkg.com/github-calendar@latest/dist/github-calendar.min.js"></script>

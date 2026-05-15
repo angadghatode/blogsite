@@ -812,22 +812,102 @@ body.dashboard-mode .main-content {
 }
 
 /* ── DASHBOARD UI ───────────────────────────────────────────── */
-#view-dashboard {
-  padding: 1.5rem;
-}
+#view-dashboard { padding: 2rem; }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 300px 1fr 300px;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  align-items: start;
 }
 
-.dash-box {
-  background: rgba(10, 8, 20, 0.4);
-  border: 1px solid var(--border-color);
+.dash-widget {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.span-full { grid-column: span 3; }
+
+#commandInput {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--purple-dim);
+  color: var(--cream);
   padding: 1rem;
-  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.2rem;
+  outline: none;
+}
+
+.vault-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vault-card { background: var(--bg); border: 1px solid var(--border); padding: 10px; font-size: 12px; }
+.vault-card img { width: 30px; height: 30px; margin-bottom: 5px; }
+
+
+/* style.css */
+#commandInput {
+  border: 2px solid var(--purple-dim);
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 10px rgba(124, 108, 212, 0.2);
+}
+
+.dash-widget h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--purple-bright);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--purple-faint);
+  padding-bottom: 5px;
+}
+
+
+/* Dashboard Elements */
+.note-item {
+  background: var(--bg);
+  border-left: 2px solid var(--purple);
+  padding: 10px;
+  margin-bottom: 12px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.note-timestamp {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.note-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.note-delete-btn, .dash-delete-btn {
+  background: none;
+  border: none;
+  color: var(--tc-life);
+  font-family: 'VT323', monospace;
+  cursor: pointer;
+  margin-top: 5px;
+  opacity: 0.6;
+}
+
+.note-delete-btn:hover, .dash-delete-btn:hover {
+  opacity: 1;
+}
+
+.vault-icon {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  margin-bottom: 8px;
+}
+
+.empty-msg {
+  color: var(--text-faint);
+  font-size: 12px;
+  font-style: italic;
 }
 
 /* Launcher Buttons */

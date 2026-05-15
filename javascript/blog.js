@@ -402,6 +402,22 @@ function toast(msg, isError = false) {
   toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3200);
 }
 
+function initStars() {
+  const sf = document.getElementById('starfield');
+  if(!sf) return;
+  sf.innerHTML = ''; // Clears it so they don't duplicate on refresh
+  for (let i = 0; i < 90; i++) {
+    const el = document.createElement('div');
+    const size = Math.random() < 0.85 ? 4 : 1;
+    const op   = (Math.random() * 0.5 + 0.15).toFixed(2);
+    const dur  = (2 + Math.random() * 4).toFixed(1);
+    const del  = (Math.random() * 5).toFixed(1);
+    el.className = 'star';
+    el.style.cssText = `width:${size}px; height:${size}px; left:${(Math.random()*100).toFixed(2)}%; top:${(Math.random()*100).toFixed(2)}%; --op:${op}; opacity:${op}; animation:twinkle ${dur}s ease-in-out ${del}s infinite alternate`;
+    sf.appendChild(el);
+  }
+}
+
 // Global Keyboard Shortcuts
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {

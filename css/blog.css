@@ -107,9 +107,44 @@
 .preview-empty { color: var(--text-faint); font-family: 'VT323', monospace; font-size: 1.2rem; }
 .preview-toggle-btn { background: transparent; border: 1px solid var(--border-mid); color: var(--purple-bright); padding: 4px 12px; font-family: 'Share Tech Mono', monospace; font-size: 11px; cursor: pointer; text-transform: uppercase; margin: 0 10px; }
 
+/* ================================================================
+   MOBILE BLOG RESPONSIVENESS (Screens under 900px)
+   ================================================================ */
+
 @media (max-width: 900px) {
-  .sidebar { width: 100%; overflow: visible; padding-bottom: 0; }
-  .sidebar-box { padding: 1rem; }
-  .post-card { padding: 1.25rem; }
-  .write-preview-wrap { display: none; }
+  /* Hide the sidebar by default on mobile */
+  .sidebar {
+    display: none; 
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid var(--border-mid);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Show it when the hamburger button is clicked */
+  .sidebar.mobile-open {
+    display: flex; 
+    flex-direction: column;
+    gap: 12px; /* Tighter gap between boxes */
+    animation: fadeInDown 0.3s ease-out forwards;
+  }
+
+  /* Condense the boxes themselves */
+  .sidebar-box {
+    padding: 16px; 
+    margin-bottom: 0; 
+  }
+
+  /* Stop the GitHub commit graph from stretching the screen */
+  .github-chart-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Simple animation for the menu dropping down */
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }

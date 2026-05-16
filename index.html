@@ -36,7 +36,6 @@
       
       <nav class="main-tabs">
         <button class="main-tab active" id="tabLog" onclick="showHome()">LOG</button>
-        <button class="main-tab" onclick="openAbout()">ABOUT</button>
         <button class="main-tab admin-only" id="tabDash" onclick="showDashboard()">DASHBOARD</button>
         <button class="write-trigger admin-only" onclick="handleWriteClick()" title="New entry (⌘K)">✎</button>
       </nav>
@@ -158,9 +157,9 @@
                 </div>
               </div>
               <div class="task-filter-tabs">
-                <button class="task-filter-tab active" onclick="setTaskFilter('all', this)">All</button>
-                <button class="task-filter-tab" onclick="setTaskFilter('today', this)">Today</button>
+                <button class="task-filter-tab active" onclick="setTaskFilter('today', this)">Today</button>
                 <button class="task-filter-tab" onclick="setTaskFilter('upcoming', this)">Upcoming</button>
+                <button class="task-filter-tab" onclick="setTaskFilter('all', this)">All</button>
                 <button class="task-filter-tab" onclick="setTaskFilter('done', this)">Completed</button>
               </div>
               
@@ -221,21 +220,43 @@
   </div>
   <footer class="app-footer">
     <div class="art-placeholder art-cityscape"></div>
-      <button class="cat-trigger" onclick="openAuth()" title="system_access"></button>
-        <div class="footer-bar">
-          <span>© 2026 angad.log</span>
-          <span>BUILT WITH ♥ AND PIXELS</span>
-      </div>
+    
+    <button class="cat-trigger" onclick="handleCatClick()" title="system_access"></button>
+    
+    <div class="footer-bar">
+      <span>© 2026 angad.log</span>
+      <span>BUILT WITH ♥ AND PIXELS</span>
+    </div>
   </footer>
 
-</div> <div class="overlay" id="aboutOverlay">
-  <div class="overlay-panel">
-    <span class="overlay-back" onclick="closeAbout()">← close</span>
-    <div class="overlay-header">profile_data</div>
-    <div class="about-block">
-      <div class="about-label">who</div>
-      <div class="about-value">Angad Ghatode. Software engineering student. Perth, Western Australia.</div>
+<div class="overlay" id="signOutOverlay">
+  <div class="overlay-panel" style="text-align: center; max-width: 400px;">
+    <span class="overlay-back" onclick="closeSignOut()" style="float: left;">cancel</span>
+    <div style="clear: both;"></div>
+    
+    <div class="overlay-header" style="color: var(--tc-life); margin-bottom: 0.5rem;">system_lock</div>
+    <div class="auth-prompt" style="margin-bottom: 2rem;">Are you sure you want to lock the terminal and exit the dashboard?</div>
+    
+    <button class="pw-btn" 
+            style="width: 100%; background: rgba(232, 125, 125, 0.1); border-color: var(--tc-life); color: var(--tc-life); transition: 0.2s;" 
+            onmouseover="this.style.background='var(--tc-life)'; this.style.color='#1a0000';" 
+            onmouseout="this.style.background='rgba(232, 125, 125, 0.1)'; this.style.color='var(--tc-life)';"
+            onclick="signOut()">
+      Lock System
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="inputOverlay">
+  <div class="overlay-panel" style="max-width: 600px; width: 90%;">
+    <span class="overlay-back" id="inputModalCancel" style="cursor: pointer;">cancel</span>
+    <div class="overlay-header" id="inputModalTitle">edit_task</div>
+    
+    <div class="pw-row" style="margin-top: 1.5rem;">
+      <input type="text" class="pw-input" id="inputModalField" style="width: 100%; font-size: 16px; padding: 1rem;" placeholder="...text here...">
     </div>
+    
+    <button class="pw-btn" id="inputModalSubmit" style="width: 100%; margin-top: 0.5rem; font-size: 10px; padding: 1rem;">save_changes →</button>
   </div>
 </div>
 

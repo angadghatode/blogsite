@@ -36,12 +36,57 @@ function openAuth() {
     }
 }
 
+function handleCatClick() {
+    if (authenticated) {
+        // Open the red custom sign-out modal
+        openSignOut();
+    } else {
+        // Open the password modal
+        openAuth();
+    }
+}
+
+function openSignOut() {
+    const overlay = document.getElementById('signOutOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.add('active');
+    }
+}
+
+function closeSignOut() {
+    const overlay = document.getElementById('signOutOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        overlay.classList.remove('active');
+    }
+}
+
 function closeAuth() {
     const overlay = document.getElementById('authOverlay');
     if (overlay) {
         overlay.style.display = 'none';
         overlay.classList.remove('active');
     }
+}
+
+function signOut() {
+    // 1. Wipe the auth state
+    authenticated = false;
+    localStorage.removeItem('angad_auth');
+    
+    // 2. Revoke admin CSS privileges
+    document.body.classList.remove('is-admin');
+    
+    // 3. Close the modal silently
+    closeSignOut();
+    
+    // 4. Force the UI back to the public log view
+    if (typeof showHome === "function") {
+        showHome();
+    }
+    
+    // Note: Toast removed for a perfectly silent exit!
 }
 
 function checkPassword() {

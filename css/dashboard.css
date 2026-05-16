@@ -314,6 +314,46 @@ body.dashboard-mode .main-content {
 .event-dot { width: 8px; height: 8px; background: var(--purple-bright); border-radius: 50%; flex-shrink: 0; }
 .event-date { color: var(--text-dim); font-size: 12px;}
 
+/* ── CATEGORIZED LINKS OVERRIDE ── */
+.delete-link-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+.link-item:hover .delete-link-btn {
+  opacity: 0.5; /* Faintly appear when hovering the link */
+}
+.link-item .delete-link-btn:hover {
+  opacity: 1 !important; /* Full red when hovering the actual X */
+}
+
+.vault-category {
+  margin-bottom: 2rem;
+}
+.category-title {
+  color: var(--purple-bright);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-mid);
+  padding-bottom: 6px;
+}
+.category-grid {
+  display: grid;
+  /* Automatically scales: 1 column on small screens, multiple on wide screens */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.cal-day.active { background: var(--purple-dim); color: var(--cream); font-weight: bold;}
+
+/* THE NEW RULE: Adds a sleek border when you click a day */
+.cal-day.selected { 
+  border: 1px solid var(--purple-bright); 
+  box-sizing: border-box;
+}
+
 /* ── RESPONSIVE DASHBOARD ── */
 @media (max-width: 1400px) {
   .dash-grid { grid-template-columns: 1fr 1fr; }
@@ -321,20 +361,73 @@ body.dashboard-mode .main-content {
 }
 
 @media (max-width: 900px) {
-  .dashboard-layout { flex-direction: column; height: auto; }
-  .dash-sidebar { 
-    width: 100%; 
-    border-right: none; 
-    border-bottom: 1px solid var(--border-mid); 
-    padding-bottom: 1rem; 
-    flex-direction: row; 
-    overflow-x: auto; 
-    position: relative; 
-    top: 0;
+  /* 1. Stack the layout vertically */
+  .dashboard-layout {
+    flex-direction: column;
+    gap: 15px;
   }
-  .dash-nav { flex-direction: row; gap: 1rem;}
-  .dash-nav-item { border-left: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 0.5rem;}
-  .dash-nav-item.active { background: transparent; border-left: none; border-bottom: 3px solid var(--purple-bright); }
-  .dash-grid { grid-template-columns: 1fr; padding-right: 0;}
-  .dash-tasks, .dash-links, .dash-calendar, .dash-notes, .dash-secure-vault { grid-column: span 1; }
+
+  /* 2. Turn the Sidebar into a swipeable top navigation */
+  .dash-sidebar {
+    width: 100%;
+    padding-right: 0;
+    border-bottom: 2px solid var(--border-mid);
+    padding-bottom: 0;
+    flex-shrink: 0;
+    overflow-y: hidden;
+  }
+
+  .dash-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px; /* Room for the scrollbar */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Make the active tab underline instead of a left-border */
+  .dash-nav-item {
+    border-left: none !important;
+    border-bottom: 3px solid transparent;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 16px;
+    white-space: nowrap; /* Keeps text on one line */
+  }
+
+  .dash-nav-item.active {
+    background: linear-gradient(0deg, rgba(124, 108, 212, 0.15) 0%, transparent 100%) !important;
+    border-left: none !important;
+    border-bottom: 3px solid var(--purple-bright) !important;
+  }
+
+  /* Remove the top margin from the settings button so it sits flush */
+  .dash-nav-item[onclick*="settings"] {
+    margin-top: 0 !important;
+  }
+
+  /* 3. Collapse the Grid into a single column */
+  .dash-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+    padding-right: 0;
+  }
+
+  /* OVERRIDE THE JAVASCRIPT: Force everything to stack */
+  .dash-command, .dash-tasks, .dash-links, .dash-calendar, .dash-notes, .dash-secure-vault {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+
+  /* 4. Fix Command Bar sizing so text doesn't get cut off */
+  .dash-command {
+    padding: 0 16px;
+    height: 60px;
+  }
+  .command-prefix { font-size: 20px; }
+  #commandInput { font-size: 16px; }
+
+  /* 5. Adjust Category Grids for Links */
+  .category-grid {
+    grid-template-columns: 1fr; /* Single column links on phone */
+  }
 }

@@ -418,6 +418,14 @@ function initStars() {
   }
 }
 
+/* ── MOBILE MENU TOGGLE ── */
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('mobile-open');
+    }
+}
+
 // Global Keyboard Shortcuts
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {

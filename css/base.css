@@ -4,60 +4,89 @@
    ================================================================ */
 
 :root {
-  --bg:            #0e0b1f;
-  --bg-card:       rgba(10, 8, 20, 0.95); 
-  --bg-hover:      #211e36;
-  --bg-sidebar:    #181628;
-  --purple:        #7c6cd4;
-  --purple-bright: #9b8de8;
-  --purple-dim:    rgba(124,108,212,0.45);
-  --purple-faint:  rgba(124,108,212,0.09);
-  --cream:         #f0d878;
-  --cream-dim:     rgba(240,216,120,0.55);
-  --text:          #c0b8e0;
-  --text-dim:      #8a82b0;
-  --text-faint:    #564e78;
-  --border:        rgba(124,108,212,0.14);
-  --border-mid:    rgba(124,108,212,0.28);
-  --border-bright: rgba(124,108,212,0.5);
-  --green:         #4dd4a0;
+  --bg:            #09090e; /* Deepest shadow blue */
+  --bg-card:       rgba(18, 18, 28, 0.95); 
+  --bg-hover:      #1f1f33;
+  --bg-sidebar:    #12121c;
+  
+  /* Primary Accent: Neon Violet */
+  --purple:        #b142ff; 
+  --purple-bright: #d58bff;
+  --purple-dim:    rgba(177, 66, 255, 0.35);
+  --purple-faint:  rgba(177, 66, 255, 0.08);
+  
+  /* Secondary Accent: Cyan */
+  --cream:         #00e5ff; 
+  --cream-dim:     rgba(0, 229, 255, 0.55);
+  
+  --text:          #e2e2ec;
+  --text-dim:      #8f8f9d;
+  --text-faint:    #4d4d60;
+  --border:        rgba(177, 66, 255, 0.15);
+  --border-mid:    rgba(177, 66, 255, 0.3);
+  --green:         #39ffb3;
 
-  /* tag palette */
-  --tc-life:        #e87d7d;
-  --tc-project:     #7db3e8;
-  --tc-work:        #e8c67d;
-  --tc-reflection:  #b07de8;
-  --tc-win:         #7de8a8;
-  --tc-setback:     #e8907d;
-  --tc-idea:        #7dd4e8;
-  font-size: 20px;
+  /* Tag Palette */
+  --tc-life:       #ff42a1;
+  --tc-project:    #429bff;
+  --tc-work:       #ffb342;
+  --tc-reflection: #b142ff;
+  --tc-win:        #39ffb3;
+  --tc-setback:    #ff5c42;
+  --tc-idea:       #00e5ff;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── GLOBAL RESET & MOBILE WOBBLE FIX ── */
+*, *::before, *::after { 
+  box-sizing: border-box !important; 
+  margin: 0; 
+  padding: 0; 
+}
 
 html, body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden; 
-}
-
-body {
+  width: 100%;
+  max-width: 100vw;
+  /* THE FIX: Only hide horizontal overflow. Vertical scrolling MUST stay active! */
+  overflow-x: hidden !important; 
+  position: relative;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: 'Qaaxee', monospace;
   font-size: 18px;
   line-height: 1.7;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
 }
 
-/* Custom Pixel Scrollbars */
-::-webkit-scrollbar { width: 6px; }
+/* ================================================================
+   LOCAL CUSTOM FONTS
+   ================================================================ */
+
+@font-face { font-family: 'Qaaxee'; src: url('../assets/fonts/qaaxee/qaaxee.ttf') format('truetype'); }
+
+
+/* ── QAAXEE FONT TAMING ── */
+h1, h2, h3, .site-title, .card-title, .category-title {
+  letter-spacing: normal !important; 
+  line-height: 1.2 !important; 
+}
+.main-tab, .pw-btn, .sidebar-nav-item, .task-filter-tab {
+  line-height: 1 !important; 
+  padding-top: 14px !important; 
+  padding-bottom: 10px !important;
+}
+
+
+/* ================================================================
+   SCROLLBARS & UTILITIES
+   ================================================================ */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--purple-dim); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--purple); }
 
-/* Utilities */
 .view { display: none; }
 .view.active { display: block; }
 .admin-only { display: none !important; }
@@ -65,14 +94,13 @@ body.is-admin .admin-only { display: flex !important; }
 body.is-admin #tabDash, body.is-admin .write-trigger { display: inline-flex !important; }
 
 /* ── STAR FIELD ── */
-/* ── STAR FIELD ── */
 #starfield {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 0; /* THE FIX: Changed from -10 to 0 */
+  z-index: 0; 
   pointer-events: none; 
 }
 
@@ -81,12 +109,61 @@ body.is-admin #tabDash, body.is-admin .write-trigger { display: inline-flex !imp
   background: #ffd68e;
   border-radius: 0;
 }
+
 @keyframes twinkle {
   0%, 100% { opacity: var(--op); }
   50%       { opacity: calc(var(--op) * 0.25); }
 }
 
-/* ── TOAST ── */
-.toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg-card); border: 1px solid var(--purple-dim); border-radius: 4px; color: var(--text); font-family: 'Press Start 2P', monospace; font-size: 7px; padding: 0.8rem 1.2rem; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+/* ── TOAST NOTIFICATIONS ── */
+.toast { 
+  position: fixed; 
+  bottom: 2rem; 
+  left: 50%; 
+  transform: translateX(-50%) translateY(20px); 
+  background: var(--bg-card); 
+  border: 1px solid var(--purple-dim); 
+  border-radius: 4px; 
+  color: var(--text); 
+  font-family: 'Qaaxee', monospace; 
+  font-size: 14px; /* THE FIX: Increased from 7px to 14px */
+  padding: 0.8rem 1.2rem; 
+  opacity: 0; 
+  pointer-events: none; 
+  transition: all 0.25s; 
+  z-index: 600; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
+}
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.error { border-color: var(--tc-life); color: var(--tc-life); }
+
+/* ================================================================
+   GITHUB CALENDAR DARK MODE OVERRIDE
+   ================================================================ */
+
+.github-chart-container {
+  width: 100%;
+  overflow-x: auto; /* Allows horizontal scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+/* Strip out default backgrounds */
+.calendar, .js-calendar-graph {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Make the text readable */
+.calendar text.wday, .calendar text.month {
+  fill: var(--text-dim) !important;
+  font-size: 10px !important;
+  font-family: 'Qaaxee', monospace !important;
+}
+
+/* Re-color the contribution squares to match your Synthwave theme! */
+.ContributionCalendar-day[data-level="0"], rect.day[data-level="0"] { fill: var(--bg-hover) !important; outline: 1px solid rgba(255,255,255,0.05); outline-offset: -1px; }
+.ContributionCalendar-day[data-level="1"], rect.day[data-level="1"] { fill: rgba(177, 66, 255, 0.3) !important; }
+.ContributionCalendar-day[data-level="2"], rect.day[data-level="2"] { fill: rgba(177, 66, 255, 0.6) !important; }
+.ContributionCalendar-day[data-level="3"], rect.day[data-level="3"] { fill: rgba(177, 66, 255, 0.8) !important; }
+.ContributionCalendar-day[data-level="4"], rect.day[data-level="4"] { fill: var(--purple-bright) !important; }

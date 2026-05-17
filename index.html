@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Angad Ghatode | The Build Log</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -135,10 +132,6 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
                 <span>Archive</span>
               </button>
-              <button onclick="switchDashTab('settings')" class="dash-nav-item" style="margin-top: 1rem;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                <span>Settings</span>
-              </button>
             </nav>
           </aside>
 
@@ -208,9 +201,9 @@
                   VAULT
                 </div>
               </div>
-              <div class="secure-entry">
-                <button class="pw-btn vault-enter-btn" onclick="openAuth()">Enter Vault</button>
-              </div>
+              
+              <div id="secure-vault-content" class="list-container" style="flex: 1;"></div>
+              
             </section>
 
           </div>
@@ -218,9 +211,9 @@
       </div>
     </main>
   </div>
+  
   <footer class="app-footer">
     <div class="art-placeholder art-cityscape"></div>
-    
     <button class="cat-trigger" onclick="handleCatClick()" title="system_access"></button>
     
     <div class="footer-bar">
@@ -263,16 +256,13 @@
 <div id="view-write">
   <div class="write-header">
     <span class="write-back" onclick="closeWrite()">← back to log</span>
-    
     <span id="writeModeLabel" class="write-mode-label">new entry</span>
-    
     <button id="previewToggleBtn" class="preview-toggle-btn" onclick="toggleMobilePreview()">preview</button>
-    
     <select class="write-tag" id="newTag">
       <option value="life">life</option><option value="project">project</option>
     </select>
     <button class="write-submit" id="submitBtn" onclick="submitPost()">// post entry</button>
-</div>
+  </div>
   <div class="write-title-wrap">
     <input class="write-title-input" id="newTitle" type="text" placeholder="entry title...">
   </div>

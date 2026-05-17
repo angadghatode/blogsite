@@ -6,9 +6,10 @@
 // State Management
 let allTodos = [];
 let allNotes = [];
-let allLinks = []; // NEW: Cached link state
+let allLinks = []; 
+let allSecureFiles = []; 
 let currentTaskFilter = 'today';
-let currentDashTab = 'overview'; // NEW: Tracks current view for layout changes
+let currentDashTab = 'overview'; 
 
 function showDashboard() {
     document.body.classList.add('dashboard-mode'); 
@@ -20,45 +21,45 @@ function showDashboard() {
     
     fetchTodos();
     fetchNotes();
-    fetchVault(); // CHANGED: Replaced renderVault()
+    fetchVault(); 
+    fetchSecureFiles(); // THE MISSING IGNITION WIRE: This powers the Vault UI!
     renderCalendar();
 }
 
 /* ── UI INTERACTIONS ────────────────────────────────────────── */
 
 function switchDashTab(tabName) {
-    currentDashTab = tabName; // Update state
+    currentDashTab = tabName; 
     
     document.querySelectorAll('.dash-nav-item').forEach(btn => btn.classList.remove('active'));
-    if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    
+    const activeBtn = document.querySelector(`.dash-nav-item[onclick*="${tabName}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
 
     const cards = document.querySelectorAll('.dash-card');
     const commandBar = document.querySelector('.dash-command');
 
+    // Handle CSS class naming quirk for the vault
+    const targetClass = tabName === 'vault' ? 'dash-secure-vault' : `dash-${tabName}`;
+
     cards.forEach(card => {
         if (card === commandBar) return; 
+        
         if (tabName === 'overview') {
-            card.style.display = 'flex'; 
+            card.style.display = ''; 
+            card.style.gridColumn = '';
+            card.style.gridRow = '';
         } else {
-            if (card.classList.contains(`dash-${tabName}`)) {
+            if (card.classList.contains(targetClass)) {
                 card.style.display = 'flex';
                 card.style.gridColumn = '1 / -1'; 
+                card.style.gridRow = 'auto'; 
             } else {
                 card.style.display = 'none';
             }
         }
     });
 
-    if (tabName === 'overview') {
-        document.querySelector('.dash-tasks').style.gridColumn = 'span 1';
-        document.querySelector('.dash-links').style.gridColumn = 'span 1';
-        document.querySelector('.dash-calendar').style.gridColumn = '3';
-        document.querySelector('.dash-calendar').style.gridRow = '1 / span 2';
-        document.querySelector('.dash-notes').style.gridColumn = 'span 1';
-        document.querySelector('.dash-secure-vault').style.gridColumn = 'span 1';
-    }
-    
-    // Dynamically rebuild the links layout based on the new tab
     renderVault(); 
 }
 
@@ -73,160 +74,171 @@ function setTaskFilter(filterType, element) {
 
 // TODOS
 async function fetchTodos() {
-  if (typeof sb === 'undefined') return;
-  const { data, error } = await sb.from('todos').select('*').order('created_at', { ascending: false });
-  if (error) return console.error(error);
+    if (typeof sb === 'undefined') return;
+    
+    const { data, error } = await sb.from('todos')
+        .select('*')
+        .order('order_index', { ascending: true })
+        .order('created_at', { ascending: false });
+        
+    if (error) return console.error(error);
   
-  allTodos = data.filter(t => {
-      const isDone = (t.is_done === true || t.is_done === 'true');
-      if (isDone) {
-          const doneMatch = t.task.match(/!done_(\S+)/);
-          if (doneMatch) {
-              const doneDate = new Date(doneMatch[1]);
-              const diffHours = (new Date() - doneDate) / (1000 * 60 * 60);
-              if (diffHours > 48) {
-                  sb.from('todos').delete().eq('id', t.id).then(); 
-                  return false;
-              }
-          }
-      }
-      return true;
-  });
-  renderTodos();
+    allTodos = data.filter(t => {
+        const isDone = (t.is_done === true || t.is_done === 'true');
+        if (isDone) {
+            const doneMatch = t.task.match(/!done_(\S+)/);
+            if (doneMatch) {
+                const doneDate = new Date(doneMatch[1]);
+                const diffHours = (new Date() - doneDate) / (1000 * 60 * 60);
+                if (diffHours > 48) {
+                    sb.from('todos').delete().eq('id', t.id).then(); 
+                    return false;
+                }
+            }
+        }
+        return true;
+    });
+    renderTodos();
 }
 
 function renderTodos() {
-  const list = document.getElementById('todo-list');
-  if (!list) return;
+    const list = document.getElementById('todo-list');
+    if (!list) return;
 
-  const now = new Date();
-  now.setHours(0,0,0,0);
+    const now = new Date();
+    now.setHours(0,0,0,0);
   
-  let filter = currentTaskFilter;
-  if (filter === 'done') filter = 'completed'; 
+    let filter = currentTaskFilter;
+    if (filter === 'done') filter = 'completed'; 
 
-  let filtered = allTodos.filter(t => {
-      const isDone = (t.is_done === true || t.is_done === 'true');
+    let filtered = allTodos.filter(t => {
+        const isDone = (t.is_done === true || t.is_done === 'true');
 
-      let dateMatch = t.task.match(/@(\d{4}-\d{2}-\d{2})/);
-      let taskDate = null;
+        let dateMatch = t.task.match(/@(\d{4}-\d{2}-\d{2})/);
+        let taskDate = null;
       
-      if (dateMatch) {
-          let [y, m, d] = dateMatch[1].split('-');
-          taskDate = new Date(y, m - 1, d);
-          taskDate.setHours(0,0,0,0);
-      }
+        if (dateMatch) {
+            let [y, m, d] = dateMatch[1].split('-');
+            taskDate = new Date(y, m - 1, d);
+            taskDate.setHours(0,0,0,0);
+        }
 
-      let isTodayOrOverdue = false;
-      let isUpcoming = true;
+        let isTodayOrOverdue = false;
+        let isUpcoming = true;
 
-      if (taskDate) {
-          let diffTime = taskDate.getTime() - now.getTime();
-          let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
+        if (taskDate) {
+            let diffTime = taskDate.getTime() - now.getTime();
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
           
-          if (diffDays <= 0) { 
-              isTodayOrOverdue = true; 
-              isUpcoming = false; 
-          } else {
-              isTodayOrOverdue = false;
-              isUpcoming = true;
-          }
-      }
+            if (diffDays <= 0) { 
+                isTodayOrOverdue = true; 
+                isUpcoming = false; 
+            } else {
+                isTodayOrOverdue = false;
+                isUpcoming = true;
+            }
+        }
 
-      if (filter === 'all') return true; 
-      if (filter === 'today') return !isDone && isTodayOrOverdue;
-      if (filter === 'upcoming') return !isDone && isUpcoming;
-      if (filter === 'completed') return isDone;
-      return false; 
-  });
+        if (filter === 'all') return true; 
+        if (filter === 'today') return !isDone && isTodayOrOverdue;
+        if (filter === 'upcoming') return !isDone && isUpcoming;
+        if (filter === 'completed') return isDone;
+        return false; 
+    });
 
-  list.innerHTML = filtered.map(t => {
-      const isDone = (t.is_done === true || t.is_done === 'true');
-      let taskText = t.task.replace(/!done_\S+/, ''); 
+    list.innerHTML = filtered.map(t => {
+        const isDone = (t.is_done === true || t.is_done === 'true');
+        let taskText = t.task.replace(/!done_\S+/, ''); 
       
-      let tagMatch = taskText.match(/#(\w+)/);
-      let dateMatch = taskText.match(/@(\d{4}-\d{2}-\d{2})/);
+        let tagMatch = taskText.match(/#(\w+)/);
+        let dateMatch = taskText.match(/@(\d{4}-\d{2}-\d{2})/);
       
-      let tag = tagMatch ? tagMatch[1] : null;
-      let absoluteDate = dateMatch ? dateMatch[1] : null;
+        let tag = tagMatch ? tagMatch[1] : null;
+        let absoluteDate = dateMatch ? dateMatch[1] : null;
       
-      let cleanTask = taskText.replace(/#\w+/g, '').replace(/@[\w-]+/g, '').trim();
+        let cleanTask = taskText.replace(/#\w+/g, '').replace(/@[\w-]+/g, '').trim();
 
-      let tagHtml = tag ? `<span class="tag-chip">${tag}</span>` : '';
-      let dateHtml = '';
+        let tagHtml = tag ? `<span class="tag-chip">${tag}</span>` : '';
+        let dateHtml = '';
 
-      if (absoluteDate) {
-          let [y, m, d] = absoluteDate.split('-');
-          let tDate = new Date(y, m - 1, d);
-          tDate.setHours(0,0,0,0);
+        if (absoluteDate) {
+            let [y, m, d] = absoluteDate.split('-');
+            let tDate = new Date(y, m - 1, d);
+            tDate.setHours(0,0,0,0);
           
-          let diffDays = Math.round((tDate - now) / (1000 * 60 * 60 * 24));
-          let label = "";
-          let colorStyle = "";
+            let diffDays = Math.round((tDate - now) / (1000 * 60 * 60 * 24));
+            let label = "";
+            let colorStyle = "";
           
-          if (diffDays === 0) { label = "Today"; }
-          else if (diffDays === 1) { label = "Tomorrow"; }
-          else if (diffDays < 0) { 
-              label = "Overdue"; 
-              colorStyle = "color: var(--tc-life); border-color: var(--tc-life); background: rgba(232,125,125,0.1);"; 
-          }
-          else { label = tDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}); }
+            if (diffDays === 0) { label = "Today"; }
+            else if (diffDays === 1) { label = "Tomorrow"; }
+            else if (diffDays < 0) { 
+                label = "Overdue"; 
+                colorStyle = "color: var(--tc-life); border-color: var(--tc-life); background: rgba(232,125,125,0.1);"; 
+            }
+            else { label = tDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}); }
           
-          dateHtml = `<span class="date-chip" style="${colorStyle}">${label}</span>`;
-      }
+            dateHtml = `<span class="date-chip" style="${colorStyle}">${label}</span>`;
+        }
 
-      return `
-        <li class="list-item">
-          <input type="checkbox" class="custom-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodo(${t.id}, this.checked)">
+        return `
+        <li class="list-item" draggable="true" data-id="${t.id}">
+            
+            <div class="drag-handle" title="Drag to reorder">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
+            </div>
+
+            <input type="checkbox" class="custom-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodo(${t.id}, this.checked)">
           
-          <span class="item-title" style="${isDone ? 'text-decoration:line-through; opacity:0.5' : ''}; cursor: pointer;" onclick="editTodo(${t.id})" title="Click to edit">${cleanTask}</span>
+            <span class="item-title" style="${isDone ? 'text-decoration:line-through; opacity:0.5' : ''}; cursor: pointer;" onclick="editTodo(${t.id})" title="Click to edit">${cleanTask}</span>
           
-          ${tagHtml}
+            ${tagHtml}
           
-          <div class="item-meta right">
-            ${dateHtml}
-            <button onclick="deleteTodo(${t.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; margin-left:12px; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
-          </div>
+            <div class="item-meta right">
+                ${dateHtml}
+                <button onclick="deleteTodo(${t.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; margin-left:12px; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
+            </div>
         </li>
-      `;
-  }).join('');
+        `;
+    }).join('');
   
-  const countEl = document.getElementById('todo-count');
-  const doneCount = allTodos.filter(t => (t.is_done === true || t.is_done === 'true')).length;
-  if (countEl) countEl.innerText = `Completed ${doneCount} tasks`;
+    const countEl = document.getElementById('todo-count');
+    const doneCount = allTodos.filter(t => (t.is_done === true || t.is_done === 'true')).length;
+    if (countEl) countEl.innerText = `Completed ${doneCount} tasks`;
 
-  renderCalendar();
+    renderCalendar();
 }
 
 // NOTES
 async function fetchNotes() {
-  if (typeof sb === 'undefined') return;
-  const { data, error } = await sb.from('notes').select('*').order('created_at', { ascending: false });
-  if (error) return console.error(error);
+    if (typeof sb === 'undefined') return;
+    const { data, error } = await sb.from('notes').select('*').order('created_at', { ascending: false });
+    if (error) return console.error(error);
   
-  allNotes = data; 
-  const list = document.getElementById('notes-list');
-  if (list) {
-    list.innerHTML = data.map(n => {
-      let lines = n.content.split('\n');
-      let title = lines[0].length > 35 ? lines[0].substring(0, 35) + '...' : lines[0];
-      let excerpt = (lines[1] || lines[0]).substring(0, 60) + '...';
-      
-      return `
-      <div class="note-item" onclick="openFullNote(${n.id})">
-        <svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-        <div class="note-text-block">
-          <span class="note-title">${title}</span>
-          <span class="note-excerpt">${excerpt}</span>
-        </div>
-        
-        <div class="item-meta right">
-          <span>${relativeDate(n.created_at)}</span>
-          <button onclick="event.stopPropagation(); deleteNote(${n.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:14px; margin-left: 12px; opacity: 0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
-        </div>
-      </div>
-    `}).join('');
-  }
+    allNotes = data; 
+    const list = document.getElementById('notes-list');
+    if (list) {
+        list.innerHTML = data.map(n => {
+            let lines = n.content.split('\n');
+            let title = lines[0].length > 35 ? lines[0].substring(0, 35) + '...' : lines[0];
+            let excerpt = (lines[1] || lines[0]).substring(0, 60) + '...';
+          
+            return `
+            <div class="note-item" onclick="openFullNote(${n.id})">
+                <svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <div class="note-text-block">
+                    <span class="note-title">${title}</span>
+                    <span class="note-excerpt">${excerpt}</span>
+                </div>
+                
+                <div class="item-meta right">
+                    <span>${relativeDate(n.created_at)}</span>
+                    <button onclick="event.stopPropagation(); deleteNote(${n.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:14px; margin-left: 12px; opacity: 0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
+                </div>
+            </div>
+            `
+        }).join('');
+    }
 }
 
 function openFullNote(id) {
@@ -245,88 +257,259 @@ function closeFullNote() {
 
 // VAULT (LINKS)
 async function fetchVault() {
-  if (typeof sb === 'undefined') return;
-  const { data, error } = await sb.from('vault').select('*').order('created_at', { ascending: false });
-  if (error) return console.error(error);
+    if (typeof sb === 'undefined') return;
+    
+    const { data, error } = await sb.from('links').select('*').order('created_at', { ascending: false });
+    if (error) return console.error("Links DB Error:", error);
+
+    console.log("SUPABASE LINKS DATA:", data);
   
-  // Cache the Microlink metadata so tab switching is instant
-  allLinks = await Promise.all(data.map(async (item) => {
-      try {
-          const metaRes = await fetch(`https://api.microlink.io?url=${encodeURIComponent(item.url)}`);
-          const metaJson = await metaRes.json();
-          item.meta = metaJson.data;
-      } catch (e) {
-          item.meta = null;
-      }
-      return item;
-  }));
+    // OPTIMIZATION: Only ask Microlink for data if we don't already have it cached!
+    allLinks = await Promise.all(data.map(async (item) => {
+        // Check if we already scanned this specific URL in our current session
+        const existingLink = allLinks.find(l => l.url === item.url && l.meta);
+        if (existingLink) {
+            item.meta = existingLink.meta; // Reuse the old logo/title instantly
+            return item;
+        }
+
+        // If it's a brand new link, fetch its data
+        try {
+            const metaRes = await fetch(`https://api.microlink.io?url=${encodeURIComponent(item.url)}`);
+            const metaJson = await metaRes.json();
+            item.meta = metaJson.data;
+        } catch (e) {
+            item.meta = null;
+        }
+        return item;
+    }));
   
-  renderVault();
+    renderVault();
 }
 
 function renderVault() {
-  const vaultEl = document.getElementById('vault-list');
-  if (!vaultEl) return;
+    const vaultEl = document.getElementById('vault-list');
+    if (!vaultEl) return;
 
-  // Reusable HTML generator for a single link item
-  const buildLinkHtml = (item) => {
-      let title = item.meta?.title || item.url.split('/')[2] || 'Link';
-      let cleanUrl = item.url.replace(/^https?:\/\//, '').substring(0, 35) + '...';
-      let initial = title.charAt(0).toUpperCase();
-      let category = item.category || 'General';
+    const buildLinkHtml = (item) => {
+        let title = item.meta?.title || item.url.split('/')[2] || 'Link';
+        let cleanUrl = item.url.replace(/^https?:\/\//, '').substring(0, 35) + '...';
+        let initial = title.charAt(0).toUpperCase();
+        let category = item.category || 'General';
       
-      let colors = ['#2563eb', '#7c6cd4', '#4dd4a0', '#e8c67d'];
-      let bgColor = colors[title.length % colors.length];
+        let colors = ['#2563eb', '#7c6cd4', '#4dd4a0', '#e8c67d'];
+        let bgColor = colors[title.length % colors.length];
 
-      let logoHtml = item.meta?.logo?.url 
-        ? `<img src="${item.meta.logo.url}" class="link-icon" style="object-fit: contain; background: white;">` 
-        : `<div class="link-icon" style="background: ${bgColor}; color: white;">${initial}</div>`;
+        let logoHtml = item.meta?.logo?.url 
+            ? `<img src="${item.meta.logo.url}" class="link-icon" style="object-fit: contain; background: white;">` 
+            : `<div class="link-icon" style="background: ${bgColor}; color: white;">${initial}</div>`;
 
-      // NOTE: event.preventDefault() stops the link from opening when clicking the X
-      return `
+        // THE FIX: The correct HTML template for Saved Links!
+        return `
         <a href="${item.url}" target="_blank" class="link-item">
-          ${logoHtml}
-          <div class="link-text">
-            <span class="link-title">${title}</span>
-            <span class="link-url">${cleanUrl}</span>
-          </div>
-          <span class="tag-chip right">${category}</span>
-          <button class="delete-link-btn" onclick="event.preventDefault(); event.stopPropagation(); deleteLink(${item.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; margin-left:12px;">✕</button>
+            ${logoHtml}
+            <div class="link-text">
+                <span class="link-title">${title}</span>
+                <span class="link-url">${cleanUrl}</span>
+            </div>
+            <span class="tag-chip right">${category}</span>
+            <button class="delete-link-btn" onclick="event.preventDefault(); event.stopPropagation(); deleteLink(${item.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; margin-left:12px;">✕</button>
         </a>
-      `;
-  };
+        `;
+    };
 
-  if (currentDashTab === 'overview') {
-      // 1. OVERVIEW MODE: Render only the Top 5 most recent links as a simple list
-      const top5 = allLinks.slice(0, 5);
-      vaultEl.style.display = "flex"; // Revert to standard flex list
-      vaultEl.innerHTML = top5.map(buildLinkHtml).join('');
-      
-  } else {
-      // 2. EXPANDED TAB MODE: Render the full categorized breakdown
-      vaultEl.style.display = "block"; // Required to stack categories properly
+    if (currentDashTab === 'overview') {
+        const top5 = allLinks.slice(0, 5);
+        vaultEl.style.display = "flex"; 
+        vaultEl.innerHTML = top5.map(buildLinkHtml).join('');
+    } else {
+        vaultEl.style.display = "block"; 
 
-      // Group links into categories using a reducer
-      let groupedLinks = allLinks.reduce((acc, item) => {
-          let cat = (item.category || 'General').toLowerCase();
-          if (!acc[cat]) acc[cat] = [];
-          acc[cat].push(item);
-          return acc;
-      }, {});
+        let groupedLinks = allLinks.reduce((acc, item) => {
+            let cat = (item.category || 'General').toLowerCase();
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(item);
+            return acc;
+        }, {});
 
-      let html = '';
-      for (let cat in groupedLinks) {
-          html += `
-              <div class="vault-category">
-                  <h3 class="category-title">${cat}</h3>
-                  <div class="category-grid">
-                      ${groupedLinks[cat].map(buildLinkHtml).join('')}
-                  </div>
-              </div>
-          `;
-      }
-      vaultEl.innerHTML = html;
-  }
+        let html = '';
+        for (let cat in groupedLinks) {
+            html += `
+                <div class="vault-category">
+                    <h3 class="category-title">${cat}</h3>
+                    <div class="category-grid">
+                        ${groupedLinks[cat].map(buildLinkHtml).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        vaultEl.innerHTML = html;
+    }
+}
+
+/* ── SECURE FILE VAULT ──────────────────────────────────────── */
+
+async function fetchSecureFiles() {
+    if (typeof sb === 'undefined') return;
+    const { data, error } = await sb.from('vault_files').select('*').order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error("Vault DB Error:", error.message);
+        allSecureFiles = []; 
+    } else {
+        allSecureFiles = data || [];
+    }
+    renderSecureVault();
+}
+
+function renderSecureVault() {
+    const container = document.getElementById('secure-vault-content');
+    if (!container) return;
+
+    // LOCKED STATE
+    if (typeof authenticated === 'undefined' || !authenticated) {
+        container.innerHTML = `
+          <div class="secure-entry">
+            <div class="vault-folder-icon">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <p>Secure storage for your sensitive files and notes.</p>
+            <button class="pw-btn vault-enter-btn" onclick="openAuth()">Enter Vault</button>
+          </div>
+        `;
+        return;
+    }
+
+    // UNLOCKED STATE: Generate the list of files
+    let filesHtml = '';
+    
+    if (allSecureFiles.length === 0) {
+        filesHtml = `<div style="color:var(--text-faint); font-size:14px; text-align:center; font-style:italic; padding: 40px 0; font-family: 'Qaaxee', monospace;">vault is empty. click + to upload.</div>`;
+    } else {
+        filesHtml = allSecureFiles.map(f => {
+            const urlObj = sb.storage.from('vault_files_bucket').getPublicUrl(f.file_path);
+            const fileUrl = urlObj.data.publicUrl;
+            const sizeMb = (f.file_size / (1024 * 1024)).toFixed(2);
+
+            return `
+            <div class="list-item" style="justify-content: space-between; padding: 12px 16px; margin-bottom: 10px;">
+                <a href="${fileUrl}" target="_blank" style="color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                    <svg class="vault-file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px; height:20px; color:var(--purple-bright); flex-shrink:0;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    <div style="display: flex; flex-direction: column; min-width: 0;">
+                        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-size: 15px;">${f.filename}</span>
+                        <span style="font-size: 11px; color: var(--text-faint); font-family: 'Qaaxee', monospace;">${sizeMb} MB • ${relativeDate(f.created_at)}</span>
+                    </div>
+                </a>
+                
+                <div style="display: flex; align-items: center; gap: 12px; margin-left: 12px;">
+                    <button onclick="downloadSecureFile('${f.file_path}', '${f.filename}')" style="background:none; border:none; color:var(--cream); cursor:pointer; display:flex; align-items:center; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Download File">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </button>
+                    <button onclick="deleteSecureFile(${f.id}, '${f.file_path}')" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7" title="Delete File">✕</button>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    // UNLOCKED STATE: Render the UI with the absolute positioned + button
+    container.innerHTML = `
+        <div style="display: flex; flex-direction: column; flex: 1; position: relative; height: 100%; min-height: 150px;">
+            <div style="overflow-y: auto; flex: 1; padding-right: 5px; padding-bottom: 45px;">
+                ${filesHtml}
+            </div>
+            
+            <input type="file" id="vault-file-input" style="display:none;" onchange="handleVaultSelect(event)" multiple>
+            
+            <button onclick="document.getElementById('vault-file-input').click()" 
+                    style="position: absolute; bottom: 0; right: 0; background: var(--bg); border: 1px solid var(--border-mid); color: var(--purple-bright); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;"
+                    onmouseover="this.style.borderColor='var(--purple-bright)'; this.style.background='var(--purple-faint)';"
+                    onmouseout="this.style.borderColor='var(--border-mid)'; this.style.background='var(--bg)';">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+        </div>
+    `;
+}
+
+// ── UPLOAD HANDLER ──
+async function handleVaultSelect(e) {
+    const files = e.target.files;
+    if (files.length > 0) uploadSecureFiles(files);
+}
+
+// ── UPLOAD ENGINE ──
+async function uploadSecureFiles(files) {
+    toast('uploading encrypted payload...');
+    let hasError = false;
+    
+    for (let file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
+
+        // 1. Upload to Storage
+        let { error: uploadError } = await sb.storage.from('vault_files_bucket').upload(filePath, file);
+        if (uploadError) {
+            console.error("Storage Error:", uploadError.message);
+            hasError = true;
+            continue; // Skip database insert if upload failed
+        }
+
+        // 2. Insert to Database
+        let { error: dbError } = await sb.from('vault_files').insert([{
+            filename: file.name,
+            file_path: filePath,
+            file_size: file.size,
+            file_type: file.type
+        }]);
+        
+        if (dbError) {
+            console.error("Database Error:", dbError.message);
+            hasError = true;
+        }
+    }
+    
+    // Only show success if NO errors occurred
+    if (hasError) {
+        toast('system error: check browser console.', true);
+    } else {
+        toast('payload secured.');
+    }
+    
+    fetchSecureFiles(); 
+}
+
+// ── DELETE ENGINE ──
+async function deleteSecureFile(id, filePath) {
+    await sb.storage.from('vault_files_bucket').remove([filePath]);
+    await sb.from('vault_files').delete().eq('id', id);
+    fetchSecureFiles();
+    toast('file erased from system.');
+}
+
+// ── DOWNLOAD ENGINE ──
+async function downloadSecureFile(filePath, filename) {
+    toast('fetching file...');
+    
+    const { data, error } = await sb.storage.from('vault_files_bucket').download(filePath);
+    
+    if (error) {
+        console.error("Download Error:", error);
+        toast('system error: download failed.', true);
+        return;
+    }
+
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename; 
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast('download complete.');
 }
 
 /* ── DYNAMIC CALENDAR & EVENT ENGINE ────────────────────────── */
@@ -336,7 +519,6 @@ let selectedCalDate = (() => {
     let t = new Date();
     return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
 })();
-
 
 function renderCalendar() {
     const calEl = document.getElementById('mini-calendar');
@@ -354,7 +536,6 @@ function renderCalendar() {
     const firstDay = new Date(year, currentCalDate.getMonth(), 1).getDay();
     const startOffset = (firstDay === 0 ? 6 : firstDay - 1); 
 
-    // 1. EXTRACT ALL ACTIVE DATED TASKS
     const activeDatedTasks = allTodos.filter(t => {
          const isDone = (t.is_done === true || t.is_done === 'true');
          if(isDone) return false; 
@@ -367,35 +548,25 @@ function renderCalendar() {
     let daysHtml = '';
     const prevMonthDays = new Date(year, currentCalDate.getMonth(), 0).getDate();
     
-    // Trailing days
     for (let i = startOffset - 1; i >= 0; i--) {
         daysHtml += `<div class="cal-day fade">${prevMonthDays - i}</div>`;
     }
     
-    // Current month days (Now Clickable!)
     for (let i = 1; i <= daysInMonth; i++) {
         const isActive = (isCurrentMonth && i === todayDate) ? 'active' : '';
         const dayStr = `${year}-${String(currentCalDate.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-        
-        // Check if this specific day is the one the user clicked
         const isSelected = (dayStr === selectedCalDate) ? 'selected' : '';
-        
         const hasTask = activeDatedTasks.some(t => t.parsedDate === dayStr);
         const hasEvent = hasTask ? '<div class="cal-dot"></div>' : '';
         
-        // Added onclick="selectCalDate('YYYY-MM-DD')"
         daysHtml += `<div class="cal-day ${isActive} ${isSelected}" onclick="selectCalDate('${dayStr}')">${i}${hasEvent}</div>`;
     }
 
-    // 2. BUILD THE AGENDA LIST FOR THE SELECTED DAY
     let agendaHtml = '';
-    
-    // Create a readable title for the selected day (e.g. "Monday, May 18")
     let [sy, sm, sd] = selectedCalDate.split('-');
     let sDateObj = new Date(sy, sm - 1, sd);
     let agendaTitle = sDateObj.toLocaleDateString('en-US', {weekday: 'long', month: 'short', day: 'numeric'});
 
-    // Filter tasks strictly to the selected day
     const dayTasks = activeDatedTasks.filter(t => t.parsedDate === selectedCalDate);
 
     if (dayTasks.length > 0) {
@@ -414,7 +585,6 @@ function renderCalendar() {
         agendaHtml = `<div style="color: var(--text-faint); font-size: 12px; text-align: center; font-style: italic; margin-top: 10px;">No events for this date</div>`;
     }
 
-    // 3. INJECT THE FINAL HTML
     calEl.innerHTML = `
       <div class="cal-header">
         <span style="cursor:pointer; color: var(--text-dim); padding: 0 10px;" onclick="changeMonth(-1)">&lt;</span>
@@ -439,14 +609,8 @@ window.changeMonth = function(offset) {
     renderCalendar();
 }
 
-// THE NEW INTERACTIVE CLICK LISTENER
 window.selectCalDate = function(dateStr) {
     selectedCalDate = dateStr;
-    renderCalendar();
-}
-
-window.changeMonth = function(offset) {
-    currentCalDate.setMonth(currentCalDate.getMonth() + offset);
     renderCalendar();
 }
 
@@ -459,6 +623,7 @@ function convertRelativeDateTag(taskStr) {
     let targetDate = new Date();
 
     if (['today', 'tod'].includes(keyword)) {
+        targetDate = new Date(); 
     } else if (['tomorrow', 'tmrw', 'tom'].includes(keyword)) {
         targetDate.setDate(targetDate.getDate() + 1);
     } else {
@@ -492,16 +657,13 @@ function customPrompt(title, defaultValue = '') {
         const submitBtn = document.getElementById('inputModalSubmit');
         const cancelBtn = document.getElementById('inputModalCancel');
 
-        // Set the text and open the modal
         titleEl.innerText = title;
         inputEl.value = defaultValue;
         overlay.style.display = 'flex';
         
-        // Slight delay to allow CSS transitions to fire, then focus the input
         setTimeout(() => overlay.classList.add('active'), 10);
         setTimeout(() => inputEl.focus(), 100);
 
-        // Helper to close and clean up event listeners
         const cleanup = () => {
             overlay.classList.remove('active');
             setTimeout(() => overlay.style.display = 'none', 200); 
@@ -510,7 +672,6 @@ function customPrompt(title, defaultValue = '') {
             inputEl.onkeydown = null;
         };
 
-        // Resolve the promise based on user action
         submitBtn.onclick = () => { cleanup(); resolve(inputEl.value); };
         cancelBtn.onclick = () => { cleanup(); resolve(null); };
         
@@ -522,34 +683,25 @@ function customPrompt(title, defaultValue = '') {
 }
 
 /* ── MUTATIONS ── */
-
 async function editTodo(id) {
     let taskObj = allTodos.find(x => x.id === id);
     if (!taskObj) return;
 
-    // Strip out the hidden completion timestamp
     let rawTask = taskObj.task.replace(/ !done_\S+/, '');
-
-    // THE FIX: Use our sleek custom async prompt instead of window.prompt!
     let updatedTask = await customPrompt("edit_task", rawTask);
     
-    // If they clicked cancel or left it blank, abort
     if (updatedTask === null || updatedTask.trim() === "") return;
 
-    // Run the text through the NLP date parser
     let finalTask = convertRelativeDateTag(updatedTask.trim());
 
-    // Re-attach the hidden completion timestamp if it was already checked
     if (taskObj.is_done) {
         let doneMatch = taskObj.task.match(/!done_\S+/);
         if (doneMatch) finalTask += ` ${doneMatch[0]}`;
     }
 
-    // Optimistic UI Update
     taskObj.task = finalTask;
     renderTodos(); 
 
-    // Sync to DB
     await sb.from('todos').update({ task: finalTask }).eq('id', id); 
     fetchTodos(); 
 }
@@ -575,23 +727,91 @@ async function toggleTodo(id, is_done) {
 async function deleteTodo(id) { await sb.from('todos').delete().eq('id', id); fetchTodos(); }
 async function deleteNote(id) { await sb.from('notes').delete().eq('id', id); fetchNotes(); }
 async function deleteLink(id) { 
-    // Optimistic UI update
     allLinks = allLinks.filter(l => l.id !== id);
     renderVault(); 
     
-    // Background sync
-    await sb.from('vault').delete().eq('id', id); 
+    // THE FIX: Changed 'vault' to 'links'
+    await sb.from('links').delete().eq('id', id); 
     fetchVault(); 
     toast('Link deleted.');
 }
 
+/* ── DRAG AND DROP ENGINE ───────────────────────────────────── */
+function initDragAndDrop() {
+    const todoList = document.getElementById('todo-list');
+    if (!todoList) return;
+
+    todoList.addEventListener('dragstart', (e) => {
+        const item = e.target.closest('.list-item');
+        if (!item) return;
+        setTimeout(() => item.classList.add('dragging'), 0);
+    });
+
+    todoList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(todoList, e.clientY);
+        const draggingItem = document.querySelector('.dragging');
+        if (!draggingItem) return;
+        
+        if (afterElement == null) {
+            todoList.appendChild(draggingItem);
+        } else {
+            todoList.insertBefore(draggingItem, afterElement);
+        }
+    });
+
+    todoList.addEventListener('dragend', (e) => {
+        const item = e.target.closest('.list-item');
+        if (item) item.classList.remove('dragging');
+        saveTaskOrder();
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.list-item:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+async function saveTaskOrder() {
+    const items = document.querySelectorAll('#todo-list .list-item');
+    
+    // Loop through the new visual order and update the database silently
+    items.forEach((item, index) => {
+        const id = parseInt(item.getAttribute('data-id'));
+        
+        // 1. Optimistic Local Update
+        const taskObj = allTodos.find(t => t.id === id);
+        if (taskObj) taskObj.order_index = index;
+        
+        // 2. Background Database Sync
+        sb.from('todos').update({ order_index: index }).eq('id', id).then();
+    });
+
+    // Re-sort the local array so switching tabs remembers the new layout
+    allTodos.sort((a, b) => {
+        const orderA = a.order_index ?? 0;
+        const orderB = b.order_index ?? 0;
+        if (orderA !== orderB) return orderA - orderB;
+        return new Date(b.created_at) - new Date(a.created_at);
+    });
+}
+
 /* ── COMMAND LISTENER & WIDGETS ── */
 window.addEventListener('DOMContentLoaded', () => {
-    initStars();
     setInterval(updateSpotify, 30000);
     setInterval(updateUptime, 1000);
     updateSpotify();
     updateUptime();
+    initDragAndDrop();
+    setInterval(updateSpotify, 30000);
     
     if (document.getElementById('view-dashboard')?.classList.contains('active')) {
         showDashboard();
@@ -627,9 +847,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
                 
-                const { error } = await sb.from('vault').insert([{ url: url, category: cat, is_media: false }]);
+                allLinks.unshift({ id: Date.now(), url: url, category: cat, meta: null });
+                renderVault();
+                
+                // Then securely save it to the database in the background
+                const { error } = await sb.from('links').insert([{ url: url, category: cat, is_media: false }]);
                 if (error) throw error;
-                fetchVault(); // Re-fetch to get microlink metadata
+                
+                // Await the fetch so we know exactly when it finishes loading the new logo
+                await fetchVault(); 
                 toast('Link saved.');
               }
               else if (val.startsWith('/note ')) {
@@ -645,22 +871,6 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-function initStars() {
-  const sf = document.getElementById('starfield');
-  if(!sf) return;
-  sf.innerHTML = '';
-  for (let i = 0; i < 90; i++) {
-    const el = document.createElement('div');
-    const size = Math.random() < 0.85 ? 4 : 1;
-    const op   = (Math.random() * 0.5 + 0.15).toFixed(2);
-    const dur  = (2 + Math.random() * 4).toFixed(1);
-    const del  = (Math.random() * 5).toFixed(1);
-    el.className = 'star';
-    el.style.cssText = `width:${size}px; height:${size}px; left:${(Math.random()*100).toFixed(2)}%; top:${(Math.random()*100).toFixed(2)}%; --op:${op}; opacity:${op}; animation:twinkle ${dur}s ease-in-out ${del}s infinite alternate`;
-    sf.appendChild(el);
-  }
-}
 
 const LASTFM_USER = "angadghatode"; 
 const LASTFM_API_KEY = "0dc0c17d61c50cafe7501409b028c517";
@@ -687,6 +897,7 @@ function updateUptime() {
   const hours = Math.floor(diff / 3600000);
   const mins = Math.floor((diff % 3600000) / 60000);
   const secs = Math.floor((diff % 60000) / 1000);
-  const uptimeEl = document.getElementById('uptime-val');
+  const uptimeEl = document.getElementById('uptime-val'
+  );
   if (uptimeEl) { uptimeEl.innerText = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; }
 }

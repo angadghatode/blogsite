@@ -1,17 +1,18 @@
 /* ================================================================
    ANGAD.LOG — auth.js
-   Handles login state and Supabase initialization
+   Handles login state, security overlays, and system access
    ================================================================ */
 
 let authenticated = false;
 
-// We assume `sb` is defined in index.html before this script runs.
+// Assume `sb` (Supabase) is defined in index.html before this script runs.
 const useSupabase = !!(typeof sb !== 'undefined'); 
 
 window.addEventListener('DOMContentLoaded', () => {
     checkPersistence();
 });
 
+/* ── STATE MANAGEMENT ── */
 function checkPersistence() {
     const isAuth = localStorage.getItem('angad_auth');
     if (isAuth === 'true') {
@@ -20,53 +21,77 @@ function checkPersistence() {
     }
 }
 
+/* ── OVERLAY CONTROLS ── */
+function handleCatClick() {
+    if (authenticated) {
+        openSignOut();
+    } else {
+        openAuth();
+    }
+}
+
 function openAuth() {
     const overlay = document.getElementById('authOverlay');
     const input = document.getElementById('pwInput');
     const errorEl = document.getElementById('pwError');
 
-    if (overlay) {
-        overlay.style.display = 'flex';
-        overlay.classList.add('active');
-    }
+    if (overlay) overlay.classList.add('open');
     if (errorEl) errorEl.style.display = 'none';
+    
     if (input) {
         input.value = '';
+        // Slight delay ensures the modal is rendered before focusing the input
         setTimeout(() => input.focus(), 100);
-    }
-}
-
-function handleCatClick() {
-    if (authenticated) {
-        // Open the red custom sign-out modal
-        openSignOut();
-    } else {
-        // Open the password modal
-        openAuth();
-    }
-}
-
-function openSignOut() {
-    const overlay = document.getElementById('signOutOverlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-        overlay.classList.add('active');
-    }
-}
-
-function closeSignOut() {
-    const overlay = document.getElementById('signOutOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.classList.remove('active');
     }
 }
 
 function closeAuth() {
     const overlay = document.getElementById('authOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-        overlay.classList.remove('active');
+    if (overlay) overlay.classList.remove('open');
+}
+
+function openSignOut() {
+    const overlay = document.getElementById('signOutOverlay');
+    if (overlay) overlay.classList.add('open');
+}
+
+function closeSignOut() {
+    const overlay = document.getElementById('signOutOverlay');
+    if (overlay) overlay.classList.remove('open');
+}
+
+/* ── AUTHENTICATION LOGIC ── */
+function checkPassword() {
+    const input = document.getElementById('pwInput');
+    const errorEl = document.getElementById('pwError');
+
+    // Failsafe if ADMIN_PASSWORD isn't configured in HTML
+    if (!ADMIN_PASSWORD || ADMIN_PASSWORD === '') {
+        errorEl.textContent = 'system error: password missing';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    if (input.value === ADMIN_PASSWORD) {
+        // 1. Grant Access
+        authenticated = true;
+        localStorage.setItem('angad_auth', 'true');
+        document.body.classList.add('is-admin');
+        
+        // 2. Clean up UI
+        errorEl.style.display = 'none';
+        input.value = '';
+        closeAuth();
+        toast('access granted.');
+        
+        // 3. Handle pending actions (e.g. clicked edit before logging in)
+        if (typeof renderSecureVault === 'function') renderSecureVault();
+    } else {
+        // Reject Access
+        errorEl.textContent = 'incorrect password';
+        errorEl.style.display = 'block';
+        input.value = '';
+        input.focus();
     }
 }
 
@@ -81,41 +106,8 @@ function signOut() {
     // 3. Close the modal silently
     closeSignOut();
     
-    // 4. Force the UI back to the public log view
+    // 4. Force the UI back to the public log view to hide dashboard
     if (typeof showHome === "function") {
         showHome();
     }
-    
-    // Note: Toast removed for a perfectly silent exit!
-}
-
-function checkPassword() {
-  const input = document.getElementById('pwInput').value;
-  const errorEl = document.getElementById('pwError');
-
-  if (!ADMIN_PASSWORD || ADMIN_PASSWORD === '') {
-    errorEl.textContent = 'system error: password missing';
-    errorEl.style.display = 'block';
-    return;
-  }
-
-  if (input === ADMIN_PASSWORD) {
-    authenticated = true;
-    localStorage.setItem('angad_auth', 'true');
-    document.body.classList.add('is-admin');
-    errorEl.style.display = 'none';
-    document.getElementById('pwInput').value = '';
-    closeAuth();
-    toast('access granted.');
-    
-    // Global variable defined in blog.js
-    if (typeof pendingEditPost !== 'undefined' && pendingEditPost !== null) {
-        openWrite(pendingEditPost);
-        pendingEditPost = null;
-    }
-  } else {
-    errorEl.textContent = 'incorrect password';
-    errorEl.style.display = 'block';
-    document.getElementById('pwInput').value = '';
-  }
 }

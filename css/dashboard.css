@@ -640,6 +640,27 @@ body.dashboard-mode .main-content {
   font-size: 12px;
 }
 
+/* ── NOTES DRAG & DROP PHYSICS ── */
+.dragging-note {
+  opacity: 0.4;
+  transform: scale(0.98);
+  border: 2px dashed var(--purple-bright) !important;
+}
+
+.drag-over {
+  background: var(--purple-dim) !important;
+  border-color: var(--purple-bright) !important;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* Make breadcrumbs glow when hovering over them with a file */
+.breadcrumb-link.drag-over {
+  background: transparent !important;
+  color: var(--purple-bright) !important;
+  text-decoration: underline;
+}
+
 /* ================================================================
    TABLET RESPONSIVENESS
    ================================================================ */

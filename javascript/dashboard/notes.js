@@ -6,6 +6,35 @@ async function fetchNotes() {
     renderNotesView();
 }
 
+// ── THE FIX: Bulletproof Click Routing ──
+window.handleNoteClick = function(id, isFolder) {
+    if (isFolder === true || String(isFolder) === 'true') {
+        navigateToFolder(id);
+    } else {
+        openNoteInTab(id);
+    }
+};
+
+window.navigateToFolder = function(folderId) {
+    currentNoteFolderId = folderId === null ? null : String(folderId);
+    currentActiveNoteId = null;
+    renderNotesView();
+};
+
+window.openNoteInTab = function(noteId) {
+    if (currentDashTab !== 'notes') {
+        switchDashTab('notes');
+    }
+    currentActiveNoteId = String(noteId);
+    renderNotesView();
+};
+
+function closeActiveNote() {
+    currentActiveNoteId = null;
+    renderNotesView();
+}
+
+// ── RENDER ENGINE ──
 function renderNotesView() {
     const container = document.getElementById('dynamic-notes-container');
     if (!container) return;
@@ -36,42 +65,59 @@ function renderNotesView() {
 }
 
 function renderFolderExplorer(container) {
-    let breadcrumbs = `<span style="cursor:pointer; color:var(--purple-bright);" onclick="navigateToFolder(null)">ROOT</span>`;
+    let breadcrumbs = `<span class="breadcrumb-link" data-id="null" style="cursor:pointer; color:var(--purple-bright); padding: 4px;" onclick="navigateToFolder(null)">ROOT</span>`;
+    
     if (currentNoteFolderId) {
         let path = [];
-        let curr = allNotes.find(n => n.id === currentNoteFolderId);
-        while (curr) {
+        let curr = allNotes.find(n => String(n.id) === currentNoteFolderId);
+        let loopGuard = 0; 
+        
+        while (curr && loopGuard < 50) {
             path.unshift(curr);
-            curr = allNotes.find(n => n.id === curr.parent_id);
+            curr = curr.parent_id ? allNotes.find(n => String(n.id) === String(curr.parent_id)) : null;
+            loopGuard++;
         }
+        
         path.forEach(f => {
-            breadcrumbs += ` <span style="opacity:0.5;">/</span> <span style="cursor:pointer; color:var(--text);" onclick="navigateToFolder(${f.id})">${f.title}</span>`;
+            breadcrumbs += ` <span style="opacity:0.5;">/</span> <span class="breadcrumb-link" data-id="${f.id}" style="cursor:pointer; color:var(--text); padding: 4px;" onclick="navigateToFolder(${f.id})">${f.title}</span>`;
         });
     }
 
-    const items = allNotes.filter(n => n.parent_id === currentNoteFolderId);
+    const items = allNotes.filter(n => {
+        if (currentNoteFolderId === null) return n.parent_id === null;
+        return String(n.parent_id) === currentNoteFolderId;
+    });
     
     let listHtml = items.length === 0 
         ? `<div style="padding:40px; text-align:center; color:var(--text-faint); font-size:14px; font-style:italic;">Folder is empty.</div>`
         : items.map(n => {
             const icon = n.is_folder 
-                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-dim);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
-                : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple-bright);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>`;
+                ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-dim); pointer-events:none;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
+                : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple-bright); pointer-events:none;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>`;
             
             const starFill = n.is_favorite ? 'var(--purple-bright)' : 'none';
             const starBtn = n.is_folder ? '' : `<button onclick="event.stopPropagation(); toggleNoteFavorite(${n.id})" style="background:none; border:none; cursor:pointer; color:var(--purple-bright); margin-right:12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="${starFill}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>`;
 
-            // THE FIX: Increased padding, added margin-bottom, and fixed the navigateToFolder typo
             return `
-            <div class="list-item" style="cursor:pointer; padding: 16px 20px; margin-bottom: 8px;" onclick="${n.is_folder ? `MapsToFolder(${n.id})` : `openNoteInTab(${n.id})`}">
-                <div style="display:flex; align-items:center; flex:1; gap:16px;">
-                    ${icon}
-                    <span style="font-size:16px; color:var(--text);">${n.title}</span>
+            <div class="list-item note-list-item" id="note-row-${n.id}" data-id="${n.id}" data-isfolder="${n.is_folder}" style="padding: 16px 20px; margin-bottom: 8px; transition: all 0.2s ease; display: flex; align-items: center;">
+                
+                <div class="drag-handle" 
+                     onmouseenter="document.getElementById('note-row-${n.id}').setAttribute('draggable', 'true')" 
+                     onmouseleave="document.getElementById('note-row-${n.id}').removeAttribute('draggable')"
+                     style="cursor:grab; color:var(--text-faint); margin-right: 16px; display: flex; align-items: center;" title="Drag to move">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
                 </div>
+
+                <div style="display:flex; align-items:center; flex:1; gap:16px; cursor:pointer;" onclick="handleNoteClick(${n.id}, ${n.is_folder})">
+                    ${icon}
+                    <span style="font-size:16px; color:var(--text); pointer-events:none;">${n.title}</span>
+                </div>
+                
                 <div style="display:flex; align-items:center;">
                     ${starBtn}
-                    <button onclick="event.stopPropagation(); deleteNoteEntity(${n.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; opacity:0.7; font-size:18px;">✕</button>
+                    <button onclick="event.stopPropagation(); deleteNoteEntity(${n.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; opacity:0.7; font-size:18px; z-index:10;">✕</button>
                 </div>
+                
             </div>`;
         }).join('');
 
@@ -85,15 +131,62 @@ function renderFolderExplorer(container) {
         </div>
         <div class="list-container" style="flex:1; overflow-y:auto; padding-top:16px;">${listHtml}</div>
     `;
+
+    initNoteDragAndDrop();
 }
 
+// ── DATA MUTATIONS ──
+async function createNewEntity(isFolder) {
+    let title = await customPrompt(isFolder ? "Folder Name:" : "Note Title:", "");
+    if (!title) return;
+    
+    const payload = {
+        title: title,
+        parent_id: currentNoteFolderId,
+        is_folder: isFolder,
+        content: isFolder ? null : '<div>...</div>'
+    };
+    
+    const { data, error } = await sb.from('notes').insert([payload]).select();
+    if (!error && data) {
+        allNotes.push(data[0]);
+        if (!isFolder) openNoteInTab(data[0].id);
+        else renderNotesView();
+    }
+}
+
+async function saveNoteData(id, title, content) {
+    const note = allNotes.find(n => String(n.id) === String(id));
+    if (note) {
+        note.title = title;
+        note.content = content;
+    }
+    await sb.from('notes').update({ title: title, content: content, updated_at: new Date().toISOString() }).eq('id', id);
+}
+
+async function toggleNoteFavorite(id) {
+    const note = allNotes.find(n => String(n.id) === String(id));
+    if (!note) return;
+    note.is_favorite = !note.is_favorite;
+    renderNotesView(); 
+    await sb.from('notes').update({ is_favorite: note.is_favorite }).eq('id', id);
+}
+
+async function deleteNoteEntity(id) {
+    const targetId = String(id);
+    allNotes = allNotes.filter(n => String(n.id) !== targetId && String(n.parent_id) !== targetId); 
+    renderNotesView();
+    await sb.from('notes').delete().eq('id', id); 
+    if (typeof toast !== 'undefined') toast('Item deleted.');
+}
+
+// ── EDITOR ENGINE ──
 function renderActiveNoteEditor(container) {
-    const note = allNotes.find(n => n.id === currentActiveNoteId);
+    const note = allNotes.find(n => String(n.id) === currentActiveNoteId);
     if (!note) { currentActiveNoteId = null; return renderNotesView(); }
 
     const starFill = note.is_favorite ? 'var(--purple-bright)' : 'none';
 
-    // THE FIX: Bumped up the title font size to 22px, body font to 16px, and body color to var(--text)
     container.innerHTML = `
         <div class="card-header" style="justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:0;">
             <div style="display:flex; align-items:center; gap:16px; width:100%;">
@@ -163,64 +256,85 @@ function renderActiveNoteEditor(container) {
     });
 }
 
-function navigateToFolder(folderId) {
-    currentNoteFolderId = folderId;
-    currentActiveNoteId = null;
-    renderNotesView();
-}
-
-function openNoteInTab(noteId) {
-    if (currentDashTab !== 'notes') {
-        switchDashTab('notes');
-    }
-    currentActiveNoteId = noteId;
-    renderNotesView();
-}
-
-function closeActiveNote() {
-    currentActiveNoteId = null;
-    renderNotesView();
-}
-
-async function createNewEntity(isFolder) {
-    let title = await customPrompt(isFolder ? "Folder Name:" : "Note Title:", "");
-    if (!title) return;
+// ── DRAG ENGINE ──
+function initNoteDragAndDrop() {
+    const items = document.querySelectorAll('.note-list-item');
     
-    const payload = {
-        title: title,
-        parent_id: currentNoteFolderId,
-        is_folder: isFolder,
-        content: isFolder ? null : '<div>...</div>'
-    };
-    
-    const { data, error } = await sb.from('notes').insert([payload]).select();
-    if (!error && data) {
-        allNotes.push(data[0]);
-        if (!isFolder) openNoteInTab(data[0].id);
-        else renderNotesView();
-    }
+    items.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', item.getAttribute('data-id'));
+            e.stopPropagation();
+            setTimeout(() => item.classList.add('dragging-note'), 0);
+        });
+
+        item.addEventListener('dragend', (e) => {
+            item.classList.remove('dragging-note');
+            item.removeAttribute('draggable'); 
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        });
+
+        if (item.getAttribute('data-isfolder') === 'true') {
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault(); 
+                item.classList.add('drag-over');
+            });
+            
+            item.addEventListener('dragleave', (e) => {
+                item.classList.remove('drag-over');
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                item.classList.remove('drag-over');
+                
+                const draggedId = e.dataTransfer.getData('text/plain');
+                const targetFolderId = item.getAttribute('data-id');
+                
+                moveNoteEntity(draggedId, targetFolderId);
+            });
+        }
+    });
+
+    document.querySelectorAll('.breadcrumb-link').forEach(bc => {
+        bc.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            bc.classList.add('drag-over');
+        });
+        bc.addEventListener('dragleave', (e) => {
+            bc.classList.remove('drag-over');
+        });
+        bc.addEventListener('drop', (e) => {
+            e.preventDefault();
+            bc.classList.remove('drag-over');
+            
+            const draggedId = e.dataTransfer.getData('text/plain');
+            const targetFolderId = bc.getAttribute('data-id') === 'null' ? null : bc.getAttribute('data-id');
+            
+            moveNoteEntity(draggedId, targetFolderId);
+        });
+    });
 }
 
-async function saveNoteData(id, title, content) {
-    const note = allNotes.find(n => n.id === id);
-    if (note) {
-        note.title = title;
-        note.content = content;
-    }
-    await sb.from('notes').update({ title: title, content: content, updated_at: new Date().toISOString() }).eq('id', id);
-}
+async function moveNoteEntity(draggedId, targetFolderId) {
+    if (String(draggedId) === String(targetFolderId)) return; 
 
-async function toggleNoteFavorite(id) {
-    const note = allNotes.find(n => n.id === id);
-    if (!note) return;
-    note.is_favorite = !note.is_favorite;
+    // THE FIX: Safe-loop string coercion for circular drop prevention
+    let curr = targetFolderId ? allNotes.find(n => String(n.id) === String(targetFolderId)) : null;
+    let loopGuard = 0;
+    while (curr && loopGuard < 50) {
+        if (String(curr.id) === String(draggedId)) {
+            if (typeof toast !== 'undefined') toast('System error: Cannot drop folder into itself.', true);
+            return;
+        }
+        curr = curr.parent_id ? allNotes.find(n => String(n.id) === String(curr.parent_id)) : null;
+        loopGuard++;
+    }
+
+    const item = allNotes.find(n => String(n.id) === String(draggedId));
+    if (item) item.parent_id = targetFolderId;
     renderNotesView(); 
-    await sb.from('notes').update({ is_favorite: note.is_favorite }).eq('id', id);
-}
 
-async function deleteNoteEntity(id) {
-    allNotes = allNotes.filter(n => n.id !== id && n.parent_id !== id); 
-    renderNotesView();
-    await sb.from('notes').delete().eq('id', id); 
-    if (typeof toast !== 'undefined') toast('Item deleted.');
+    await sb.from('notes').update({ parent_id: targetFolderId }).eq('id', draggedId);
+    if (typeof toast !== 'undefined') toast('Item moved.');
 }

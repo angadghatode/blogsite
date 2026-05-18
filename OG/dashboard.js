@@ -8,8 +8,12 @@ let allTodos = [];
 let allNotes = [];
 let allLinks = []; 
 let allSecureFiles = []; 
+
+// Navigation State
 let currentTaskFilter = 'today';
 let currentDashTab = 'overview'; 
+let currentNoteFolderId = null; 
+let currentActiveNoteId = null; 
 
 function showDashboard() {
     document.body.classList.add('dashboard-mode'); 
@@ -22,7 +26,7 @@ function showDashboard() {
     fetchTodos();
     fetchNotes();
     fetchVault(); 
-    fetchSecureFiles(); // THE MISSING IGNITION WIRE: This powers the Vault UI!
+    fetchSecureFiles(); 
     renderCalendar();
 }
 
@@ -39,7 +43,6 @@ function switchDashTab(tabName) {
     const cards = document.querySelectorAll('.dash-card');
     const commandBar = document.querySelector('.dash-command');
 
-    // Handle CSS class naming quirk for the vault
     const targetClass = tabName === 'vault' ? 'dash-secure-vault' : `dash-${tabName}`;
 
     cards.forEach(card => {
@@ -61,6 +64,7 @@ function switchDashTab(tabName) {
     });
 
     renderVault(); 
+    renderNotesView(); // Triggers the dynamic notes UI swap!
 }
 
 function setTaskFilter(filterType, element) {
@@ -183,17 +187,12 @@ function renderTodos() {
 
         return `
         <li class="list-item" draggable="true" data-id="${t.id}">
-            
             <div class="drag-handle" title="Drag to reorder">
                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>
             </div>
-
             <input type="checkbox" class="custom-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodo(${t.id}, this.checked)">
-          
             <span class="item-title" style="${isDone ? 'text-decoration:line-through; opacity:0.5' : ''}; cursor: pointer;" onclick="editTodo(${t.id})" title="Click to edit">${cleanTask}</span>
-          
             ${tagHtml}
-          
             <div class="item-meta right">
                 ${dateHtml}
                 <button onclick="deleteTodo(${t.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; margin-left:12px; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
@@ -209,50 +208,243 @@ function renderTodos() {
     renderCalendar();
 }
 
-// NOTES
+/* ── INFINITE FOLDER NOTES ENGINE ───────────────────────────── */
+
 async function fetchNotes() {
     if (typeof sb === 'undefined') return;
-    const { data, error } = await sb.from('notes').select('*').order('created_at', { ascending: false });
-    if (error) return console.error(error);
-  
-    allNotes = data; 
-    const list = document.getElementById('notes-list');
-    if (list) {
-        list.innerHTML = data.map(n => {
-            let lines = n.content.split('\n');
-            let title = lines[0].length > 35 ? lines[0].substring(0, 35) + '...' : lines[0];
-            let excerpt = (lines[1] || lines[0]).substring(0, 60) + '...';
-          
-            return `
-            <div class="note-item" onclick="openFullNote(${n.id})">
-                <svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                <div class="note-text-block">
-                    <span class="note-title">${title}</span>
-                    <span class="note-excerpt">${excerpt}</span>
+    const { data, error } = await sb.from('notes').select('*').order('is_folder', { ascending: false }).order('updated_at', { ascending: false });
+    if (error) return console.error("Notes Error:", error);
+    allNotes = data || []; 
+    renderNotesView();
+}
+
+function renderNotesView() {
+    const container = document.getElementById('dynamic-notes-container');
+    if (!container) return;
+
+    if (currentDashTab === 'overview') {
+        // OVERVIEW: Show only Favorite Notes
+        const favorites = allNotes.filter(n => n.is_favorite && !n.is_folder);
+        let listHtml = favorites.length === 0 
+            ? `<div style="padding:20px; text-align:center; color:var(--text-faint); font-size:12px; font-style:italic;">No pinned notes. Star a note to see it here.</div>`
+            : favorites.map(n => `
+                <div class="list-item" style="cursor:pointer;" onclick="openNoteInTab(${n.id})">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--purple-bright)" stroke="var(--purple-bright)" stroke-width="2" style="margin-right:12px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n.title}</span>
                 </div>
-                
-                <div class="item-meta right">
-                    <span>${relativeDate(n.created_at)}</span>
-                    <button onclick="event.stopPropagation(); deleteNote(${n.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:14px; margin-left: 12px; opacity: 0.7; transition:0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
-                </div>
-            </div>
-            `
-        }).join('');
+              `).join('');
+
+        container.innerHTML = `
+            <div class="card-header"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> PINNED NOTES</div></div>
+            <div class="list-container" style="flex:1; overflow-y:auto;">${listHtml}</div>
+        `;
+    } 
+    else if (currentDashTab === 'notes') {
+        // FULL TAB: Show either the Editor or the Folder Explorer
+        if (currentActiveNoteId) {
+            renderActiveNoteEditor(container);
+        } else {
+            renderFolderExplorer(container);
+        }
     }
 }
 
-function openFullNote(id) {
-    const note = allNotes.find(n => n.id === id);
-    if (!note) return;
-    let lines = note.content.split('\n');
-    document.getElementById('fullNoteTitle').innerText = lines[0];
-    document.getElementById('fullNoteDate').innerText = fmtDate(note.created_at);
-    document.getElementById('fullNoteContent').innerText = note.content;
-    document.getElementById('noteReaderOverlay').classList.add('open');
+// DRIVES THE FILE EXPLORER
+function renderFolderExplorer(container) {
+    // 1. Build Breadcrumbs
+    let breadcrumbs = `<span style="cursor:pointer; color:var(--purple-bright);" onclick="navigateToFolder(null)">ROOT</span>`;
+    if (currentNoteFolderId) {
+        let path = [];
+        let curr = allNotes.find(n => n.id === currentNoteFolderId);
+        while (curr) {
+            path.unshift(curr);
+            curr = allNotes.find(n => n.id === curr.parent_id);
+        }
+        path.forEach(f => {
+            breadcrumbs += ` <span style="opacity:0.5;">/</span> <span style="cursor:pointer; color:var(--text);" onclick="navigateToFolder(${f.id})">${f.title}</span>`;
+        });
+    }
+
+    // 2. Filter items to current folder
+    const items = allNotes.filter(n => n.parent_id === currentNoteFolderId);
+    
+    let listHtml = items.length === 0 
+        ? `<div style="padding:40px; text-align:center; color:var(--text-faint); font-size:12px; font-style:italic;">Folder is empty.</div>`
+        : items.map(n => {
+            const icon = n.is_folder 
+                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-dim);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
+                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple-bright);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>`;
+            
+            const starFill = n.is_favorite ? 'var(--purple-bright)' : 'none';
+            const starBtn = n.is_folder ? '' : `<button onclick="event.stopPropagation(); toggleNoteFavorite(${n.id})" style="background:none; border:none; cursor:pointer; color:var(--purple-bright); margin-right:10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="${starFill}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>`;
+
+            return `
+            <div class="list-item" style="cursor:pointer; padding: 12px 16px;" onclick="${n.is_folder ? `MapsToFolder(${n.id})` : `openNoteInTab(${n.id})`}">
+                <div style="display:flex; align-items:center; flex:1; gap:12px;">
+                    ${icon}
+                    <span style="font-size:14px;">${n.title}</span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    ${starBtn}
+                    <button onclick="event.stopPropagation(); deleteNoteEntity(${n.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; opacity:0.7; font-size:16px;">✕</button>
+                </div>
+            </div>`;
+        }).join('');
+
+    container.innerHTML = `
+        <div class="card-header" style="justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:0;">
+            <div class="card-title" style="font-size:12px;">${breadcrumbs}</div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="createNewEntity(true)" class="tag-chip" style="cursor:pointer; background:transparent; border:1px solid var(--border-mid);">+ Folder</button>
+                <button onclick="createNewEntity(false)" class="tag-chip" style="cursor:pointer; background:var(--purple-dim); border:none; color:white;">+ Note</button>
+            </div>
+        </div>
+        <div class="list-container" style="flex:1; overflow-y:auto; padding-top:10px;">${listHtml}</div>
+    `;
 }
 
-function closeFullNote() {
-    document.getElementById('noteReaderOverlay').classList.remove('open');
+// DRIVES THE LIVE EDITOR
+function renderActiveNoteEditor(container) {
+    const note = allNotes.find(n => n.id === currentActiveNoteId);
+    if (!note) { currentActiveNoteId = null; return renderNotesView(); }
+
+    const starFill = note.is_favorite ? 'var(--purple-bright)' : 'none';
+
+    container.innerHTML = `
+        <div class="card-header" style="justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:0;">
+            <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                <button onclick="closeActiveNote()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">&larr; Back</button>
+                <input type="text" id="live-note-title" value="${note.title}" style="flex:1; background:transparent; border:none; color:var(--text); font-family:'Qaaxee', monospace; font-size:16px; outline:none;" placeholder="Note Title...">
+                <button onclick="toggleNoteFavorite(${note.id})" style="background:none; border:none; cursor:pointer; color:var(--purple-bright);"><svg width="18" height="18" viewBox="0 0 24 24" fill="${starFill}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></button>
+            </div>
+        </div>
+        
+        <div id="live-note-body" contenteditable="true" style="flex:1; overflow-y:auto; padding: 20px; font-size: 14px; line-height: 1.6; outline:none; color:var(--text-dim);">
+            ${note.content || '<div>start typing... (use #, ##, or ### for headings)</div>'}
+        </div>
+    `;
+
+    // Attach Live Editor Listeners
+    const titleEl = document.getElementById('live-note-title');
+    const bodyEl = document.getElementById('live-note-body');
+    let saveTimeout;
+
+    const triggerSave = () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => { saveNoteData(note.id, titleEl.value, bodyEl.innerHTML); }, 1000);
+    };
+
+    titleEl.addEventListener('input', triggerSave);
+    bodyEl.addEventListener('input', triggerSave);
+
+    // The Live Markdown Interceptor
+    bodyEl.addEventListener('keyup', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
+            const node = sel.anchorNode;
+            
+            if (node && node.nodeType === 3) { // If it's a text node
+                const text = node.textContent;
+                let match = false;
+                let newTag = '';
+                let cleanText = '';
+                
+                if (text.startsWith('### ')) { match = true; newTag = 'h3'; cleanText = text.substring(4); }
+                else if (text.startsWith('## ')) { match = true; newTag = 'h2'; cleanText = text.substring(3); }
+                else if (text.startsWith('# ')) { match = true; newTag = 'h1'; cleanText = text.substring(2); }
+                
+                if (match) {
+                    const el = document.createElement(newTag);
+                    el.style.color = "var(--text)";
+                    el.style.marginTop = "1rem";
+                    el.style.marginBottom = "0.5rem";
+                    el.textContent = cleanText;
+                    
+                    const parentBlock = node.parentNode;
+                    
+                    if (parentBlock.id === 'live-note-body') {
+                        parentBlock.replaceChild(el, node);
+                    } else {
+                        parentBlock.parentNode.replaceChild(el, parentBlock);
+                    }
+                    
+                    // Reset Cursor inside the new heading
+                    const range = document.createRange();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    
+                    triggerSave();
+                }
+            }
+        }
+    });
+}
+
+// ── NOTES NAVIGATION & MUTATIONS ──
+
+function navigateToFolder(folderId) {
+    currentNoteFolderId = folderId;
+    currentActiveNoteId = null;
+    renderNotesView();
+}
+
+function openNoteInTab(noteId) {
+    if (currentDashTab !== 'notes') {
+        switchDashTab('notes');
+    }
+    currentActiveNoteId = noteId;
+    renderNotesView();
+}
+
+function closeActiveNote() {
+    currentActiveNoteId = null;
+    renderNotesView();
+}
+
+async function createNewEntity(isFolder) {
+    let title = await customPrompt(isFolder ? "Folder Name:" : "Note Title:", "");
+    if (!title) return;
+    
+    const payload = {
+        title: title,
+        parent_id: currentNoteFolderId,
+        is_folder: isFolder,
+        content: isFolder ? null : '<div>...</div>'
+    };
+    
+    const { data, error } = await sb.from('notes').insert([payload]).select();
+    if (!error && data) {
+        allNotes.push(data[0]);
+        if (!isFolder) openNoteInTab(data[0].id);
+        else renderNotesView();
+    }
+}
+
+async function saveNoteData(id, title, content) {
+    const note = allNotes.find(n => n.id === id);
+    if (note) {
+        note.title = title;
+        note.content = content;
+    }
+    await sb.from('notes').update({ title: title, content: content, updated_at: new Date().toISOString() }).eq('id', id);
+}
+
+async function toggleNoteFavorite(id) {
+    const note = allNotes.find(n => n.id === id);
+    if (!note) return;
+    note.is_favorite = !note.is_favorite;
+    renderNotesView(); // Instant UI update
+    await sb.from('notes').update({ is_favorite: note.is_favorite }).eq('id', id);
+}
+
+async function deleteNoteEntity(id) {
+    allNotes = allNotes.filter(n => n.id !== id && n.parent_id !== id); // removes item and direct children locally
+    renderNotesView();
+    await sb.from('notes').delete().eq('id', id); // Supabase 'cascade' handles deep deletion
+    toast('Item deleted.');
 }
 
 // VAULT (LINKS)
@@ -262,18 +454,12 @@ async function fetchVault() {
     const { data, error } = await sb.from('links').select('*').order('created_at', { ascending: false });
     if (error) return console.error("Links DB Error:", error);
 
-    console.log("SUPABASE LINKS DATA:", data);
-  
-    // OPTIMIZATION: Only ask Microlink for data if we don't already have it cached!
     allLinks = await Promise.all(data.map(async (item) => {
-        // Check if we already scanned this specific URL in our current session
         const existingLink = allLinks.find(l => l.url === item.url && l.meta);
         if (existingLink) {
-            item.meta = existingLink.meta; // Reuse the old logo/title instantly
+            item.meta = existingLink.meta; 
             return item;
         }
-
-        // If it's a brand new link, fetch its data
         try {
             const metaRes = await fetch(`https://api.microlink.io?url=${encodeURIComponent(item.url)}`);
             const metaJson = await metaRes.json();
@@ -304,7 +490,6 @@ function renderVault() {
             ? `<img src="${item.meta.logo.url}" class="link-icon" style="object-fit: contain; background: white;">` 
             : `<div class="link-icon" style="background: ${bgColor}; color: white;">${initial}</div>`;
 
-        // THE FIX: The correct HTML template for Saved Links!
         return `
         <a href="${item.url}" target="_blank" class="link-item">
             ${logoHtml}
@@ -366,7 +551,6 @@ function renderSecureVault() {
     const container = document.getElementById('secure-vault-content');
     if (!container) return;
 
-    // LOCKED STATE
     if (typeof authenticated === 'undefined' || !authenticated) {
         container.innerHTML = `
           <div class="secure-entry">
@@ -380,7 +564,6 @@ function renderSecureVault() {
         return;
     }
 
-    // UNLOCKED STATE: Generate the list of files
     let filesHtml = '';
     
     if (allSecureFiles.length === 0) {
@@ -412,7 +595,6 @@ function renderSecureVault() {
         }).join('');
     }
 
-    // UNLOCKED STATE: Render the UI with the absolute positioned + button
     container.innerHTML = `
         <div style="display: flex; flex-direction: column; flex: 1; position: relative; height: 100%; min-height: 150px;">
             <div style="overflow-y: auto; flex: 1; padding-right: 5px; padding-bottom: 45px;">
@@ -447,15 +629,13 @@ async function uploadSecureFiles(files) {
         const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
         const filePath = `uploads/${fileName}`;
 
-        // 1. Upload to Storage
         let { error: uploadError } = await sb.storage.from('vault_files_bucket').upload(filePath, file);
         if (uploadError) {
             console.error("Storage Error:", uploadError.message);
             hasError = true;
-            continue; // Skip database insert if upload failed
+            continue; 
         }
 
-        // 2. Insert to Database
         let { error: dbError } = await sb.from('vault_files').insert([{
             filename: file.name,
             file_path: filePath,
@@ -469,7 +649,6 @@ async function uploadSecureFiles(files) {
         }
     }
     
-    // Only show success if NO errors occurred
     if (hasError) {
         toast('system error: check browser console.', true);
     } else {
@@ -725,12 +904,10 @@ async function toggleTodo(id, is_done) {
 }
 
 async function deleteTodo(id) { await sb.from('todos').delete().eq('id', id); fetchTodos(); }
-async function deleteNote(id) { await sb.from('notes').delete().eq('id', id); fetchNotes(); }
+
 async function deleteLink(id) { 
     allLinks = allLinks.filter(l => l.id !== id);
     renderVault(); 
-    
-    // THE FIX: Changed 'vault' to 'links'
     await sb.from('links').delete().eq('id', id); 
     fetchVault(); 
     toast('Link deleted.');
@@ -782,20 +959,12 @@ function getDragAfterElement(container, y) {
 
 async function saveTaskOrder() {
     const items = document.querySelectorAll('#todo-list .list-item');
-    
-    // Loop through the new visual order and update the database silently
     items.forEach((item, index) => {
         const id = parseInt(item.getAttribute('data-id'));
-        
-        // 1. Optimistic Local Update
         const taskObj = allTodos.find(t => t.id === id);
         if (taskObj) taskObj.order_index = index;
-        
-        // 2. Background Database Sync
         sb.from('todos').update({ order_index: index }).eq('id', id).then();
     });
-
-    // Re-sort the local array so switching tabs remembers the new layout
     allTodos.sort((a, b) => {
         const orderA = a.order_index ?? 0;
         const orderB = b.order_index ?? 0;
@@ -811,7 +980,6 @@ window.addEventListener('DOMContentLoaded', () => {
     updateSpotify();
     updateUptime();
     initDragAndDrop();
-    setInterval(updateSpotify, 30000);
     
     if (document.getElementById('view-dashboard')?.classList.contains('active')) {
         showDashboard();
@@ -850,17 +1018,16 @@ window.addEventListener('DOMContentLoaded', () => {
                 allLinks.unshift({ id: Date.now(), url: url, category: cat, meta: null });
                 renderVault();
                 
-                // Then securely save it to the database in the background
                 const { error } = await sb.from('links').insert([{ url: url, category: cat, is_media: false }]);
                 if (error) throw error;
                 
-                // Await the fetch so we know exactly when it finishes loading the new logo
                 await fetchVault(); 
                 toast('Link saved.');
               }
+              // The command now safely drops the note in the ROOT directory
               else if (val.startsWith('/note ')) {
                 const content = val.replace('/note ', '');
-                const { error } = await sb.from('notes').insert([{ content: content, category: 'text' }]);
+                const { error } = await sb.from('notes').insert([{ title: 'Quick Note', content: content, is_folder: false, parent_id: null }]);
                 if (error) throw error; 
                 fetchNotes(); 
                 toast('Note logged.'); 
@@ -897,7 +1064,6 @@ function updateUptime() {
   const hours = Math.floor(diff / 3600000);
   const mins = Math.floor((diff % 3600000) / 60000);
   const secs = Math.floor((diff % 60000) / 1000);
-  const uptimeEl = document.getElementById('uptime-val'
-  );
+  const uptimeEl = document.getElementById('uptime-val');
   if (uptimeEl) { uptimeEl.innerText = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; }
 }

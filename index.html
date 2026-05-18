@@ -184,15 +184,8 @@
               <div class="cal-widget" id="mini-calendar"></div>
             </section>
 
-            <section class="dash-card dash-notes">
-              <div class="card-header">
-                <div class="card-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                  NOTES
-                </div>
-              </div>
-              <div class="list-container" id="notes-list"></div>
-            </section>
+            <section class="dash-card dash-notes" id="dynamic-notes-container">
+               </section>
 
             <section class="dash-card dash-secure-vault">
               <div class="card-header">
@@ -317,6 +310,10 @@
 
 <script src="javascript/auth.js"></script>
 <script src="javascript/blog.js"></script>
-<script src="javascript/dashboard.js"></script>
+<script src="javascript/dashboard/core.js"></script>
+    <script src="javascript/dashboard/tasks.js"></script>
+    <script src="javascript/dashboard/notes.js"></script>
+    <script src="javascript/dashboard/vault.js"></script>
+    <script src="javascript/dashboard/calendar.js"></script>
 </body>
 </html>

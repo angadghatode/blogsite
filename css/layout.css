@@ -16,7 +16,6 @@ html, body {
   position: relative;
   margin: 0;
   padding: 0;
-  zoom: 0.87; 
 }
 
 /* 3. Ensure the main wrapper doesn't accidentally stretch */
@@ -380,23 +379,6 @@ html, body {
 
 /* ── GLOBAL LAPTOP VIEW SCALING ── */
 
-@media (max-width: 1700px) {
-  /* Targets the entire application globally */
-  body {
-    zoom: 0.75; 
-  }
-  
-  /* Firefox Fallback */
-  @-moz-document url-prefix() {
-    body {
-      transform: scale(0.75);
-      transform-origin: top center;
-      /* 100 / 0.75 = 133.33% (Keeps the layout full-width after scaling) */
-      width: 133.33%; 
-    }
-  }
-}
-
 /* ================================================================
    MOBILE MEDIA QUERIES (Screens under 900px)
    ================================================================ */
@@ -417,6 +399,14 @@ html, body {
     padding: 0 1rem; 
     overflow: visible; 
     gap: 1rem; 
+  }
+  .overlay-header { 
+    font-family: 'Qaaxee', monospace; 
+    font-size: 1.7rem; 
+    color: var(--purple-bright); 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+    margin-bottom: 1.5rem; 
   }
   
   .main-content { 

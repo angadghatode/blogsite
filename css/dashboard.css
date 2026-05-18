@@ -643,7 +643,7 @@ body.dashboard-mode .main-content {
 /* ================================================================
    TABLET RESPONSIVENESS
    ================================================================ */
-@media (max-width: 1400px) {
+@media (max-width: 1700px) {
   .dash-grid { grid-template-columns: 1fr 1fr; }
   .dash-calendar { grid-row: auto; grid-column: span 2; }
 }
@@ -651,7 +651,7 @@ body.dashboard-mode .main-content {
 /* ================================================================
    MOBILE RESPONSIVENESS (Screens under 900px)
    ================================================================ */
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .dashboard-layout {
     flex-direction: column;
     gap: 15px;

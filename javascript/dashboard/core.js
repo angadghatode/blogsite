@@ -32,30 +32,28 @@ function switchDashTab(tabName) {
     const activeBtn = document.querySelector(`.dash-nav-item[onclick*="${tabName}"]`);
     if (activeBtn) activeBtn.classList.add('active');
 
+    const wrapper = document.querySelector('.dash-wrapper');
     const cards = document.querySelectorAll('.dash-card');
-    const commandBar = document.querySelector('.dash-command');
     const targetClass = tabName === 'vault' ? 'dash-secure-vault' : `dash-${tabName}`;
 
-    cards.forEach(card => {
-        if (card === commandBar) return; 
-        
-        if (tabName === 'overview') {
-            card.style.display = ''; 
-            card.style.gridColumn = '';
-            card.style.gridRow = '';
-        } else {
+    if (tabName === 'overview') {
+        wrapper.classList.remove('single-tab-mode');
+        cards.forEach(card => card.style.display = ''); // Show all
+    } else {
+        wrapper.classList.add('single-tab-mode');
+        cards.forEach(card => {
+            if (card.classList.contains('dash-command')) return; // Always keep the OS bar
+            
             if (card.classList.contains(targetClass)) {
                 card.style.display = 'flex';
-                card.style.gridColumn = '1 / -1'; 
-                card.style.gridRow = 'auto'; 
             } else {
                 card.style.display = 'none';
             }
-        }
-    });
+        });
+    }
 
-    renderVault(); 
-    renderNotesView(); 
+    if (typeof renderVault === 'function') renderVault(); 
+    if (typeof renderNotesView === 'function') renderNotesView(); 
 }
 
 function customPrompt(title, defaultValue = '') {
@@ -185,3 +183,16 @@ function updateUptime() {
   const uptimeEl = document.getElementById('uptime-val');
   if (uptimeEl) { uptimeEl.innerText = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; }
 }
+
+// Scratchpad Auto-Save Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const pad = document.getElementById('scratchpadInput');
+    if (pad) {
+        // Load saved text on boot
+        pad.value = localStorage.getItem('angad_scratchpad') || '';
+        // Save text on every keystroke
+        pad.addEventListener('input', () => {
+            localStorage.setItem('angad_scratchpad', pad.value);
+        });
+    }
+});

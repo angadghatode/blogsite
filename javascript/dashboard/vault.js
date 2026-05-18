@@ -28,26 +28,19 @@ function renderVault() {
 
     const buildLinkHtml = (item) => {
         let title = item.meta?.title || item.url.split('/')[2] || 'Link';
-        let cleanUrl = item.url.replace(/^https?:\/\//, '').substring(0, 35) + '...';
         let initial = title.charAt(0).toUpperCase();
-        let category = item.category || 'General';
       
         let colors = ['#2563eb', '#7c6cd4', '#4dd4a0', '#e8c67d'];
         let bgColor = colors[title.length % colors.length];
 
         let logoHtml = item.meta?.logo?.url 
-            ? `<img src="${item.meta.logo.url}" class="link-icon" style="object-fit: contain; background: white;">` 
-            : `<div class="link-icon" style="background: ${bgColor}; color: white;">${initial}</div>`;
+            ? `<img src="${item.meta.logo.url}" class="app-tile-icon" style="background: white;">` 
+            : `<div class="app-tile-icon" style="background: ${bgColor}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px;">${initial}</div>`;
 
         return `
-        <a href="${item.url}" target="_blank" class="link-item">
+        <a href="${item.url}" target="_blank" class="app-tile">
             ${logoHtml}
-            <div class="link-text">
-                <span class="link-title">${title}</span>
-                <span class="link-url">${cleanUrl}</span>
-            </div>
-            <span class="tag-chip right">${category}</span>
-            <button class="delete-link-btn" onclick="event.preventDefault(); event.stopPropagation(); deleteLink(${item.id})" style="background:none; border:none; color:var(--tc-life); cursor:pointer; font-size:16px; margin-left:12px;">✕</button>
+            <span class="app-tile-name">${title}</span>
         </a>
         `;
     };
